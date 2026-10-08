@@ -38,3 +38,13 @@ Backend: testing-result-management
 - donor-pass-delivery.html
 - donor-pass-history.html
 Backend: testing-donor-pass-management
+
+
+## Service Requests module
+- service-requests.html
+- service-request-create.html
+- service-request.html
+- service-request-customer.html
+- service-request-assignment.html
+- service-request-history.html
+Backend: testing-service-request-management
