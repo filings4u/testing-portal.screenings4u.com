@@ -2,7 +2,7 @@
 const page=(location.pathname.split('/').pop()||'dashboard.html').toLowerCase();
 const groups=[
  ['Control Center',[['dashboard.html','Dashboard','⌂']]],
- ['Testing Management',[['testing-operations.html','Testing Operations','▶'],['cases.html','Cases','▣'],['orders.html','Orders','▤'],['labcorp-orders.html','Labcorp Orders','◫'],['results.html','Results','✓'],['donor-passes.html','Donor Passes','⌁'],['service-requests.html','Service Requests','≡'],['work-orders.html','Work Orders','▣'],['customers.html','Customers & Portal Access','◉'],['providers.html','Providers','◆'],['background-checks.html','Background Checks','▧'],['documents.html','Documents','▤']]]
+ ['Testing Management',[['testing-operations.html','Testing Operations','▶'],['cases.html','Cases','▣'],['orders.html','Orders','▤'],['labcorp-orders.html','Labcorp Orders','◫'],['results.html','Results','✓'],['donor-passes.html','Donor Passes','⌁'],['service-requests.html','Service Requests','≡'],['work-orders.html','Work Orders','▣'],['customers.html','Customers & Portal Access','◉'],['providers.html','Providers','◆'],['background-checks.html','Background Checks','▧'],['documents.html','Documents','▤'],['catalog.html','Catalog','▦'],['website.html','Website','◎'],['blog.html','Blog','✎']]]
 ];
 const children={
  'testing-operations.html':['testing-case.html','testing-case-schedule.html','testing-donor-pass.html','testing-collection.html','testing-lab-routing.html','testing-mro-review.html','testing-result-release.html','testing-case-events.html'],
@@ -17,7 +17,9 @@ const children={
  'providers.html':['provider-create.html','provider.html','provider-services.html','provider-locations.html','provider-contacts.html','provider-history.html'],
  'background-checks.html':['background-check-create.html','background-check.html','background-check-candidate.html','background-check-package.html','background-check-events.html'],
  'catalog.html':['catalog-create.html','catalog-service.html','catalog-pricing.html','catalog-fulfillment.html','catalog-website.html','catalog-history.html'],
- 'documents.html':['document-upload.html','document.html','document-history.html']
+ 'documents.html':['document-upload.html','document.html','document-history.html'],
+ 'website.html':['website-pages.html','website-page-create.html','website-page.html','website-history.html'],
+ 'blog.html':['blog-create.html','blog-post.html','blog-media.html']
 };
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function nav(){return groups.map(([g,items])=>`<div class="tm-nav-group"><span>${esc(g)}</span>${items.map(([href,label,icon])=>{const active=page===href||(children[href]||[]).includes(page);return `<a href="${href}" class="${active?'active':''}"><i>${icon}</i><b>${esc(label)}</b></a>`}).join('')}</div>`).join('')}
