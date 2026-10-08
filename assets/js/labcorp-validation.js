@@ -5,7 +5,11 @@ const panels=[
  ['956811','DOT Urine'],['957129','Non-DOT Urine'],['172043','Instant Test'],['791030','5 Panel Urine Expanded'],['793394','EtG + 10 Panel Urine'],['792642','4 Panel Urine'],['721950','4 Panel Urine Expanded'],['789162','9 Panel Urine'],['793247','9 Panel Urine Expanded'],['728374','12 Panel Urine'],['728372','18 Panel Urine'],
  ['806698','5 Panel Hair'],['806705','5 Panel Hair Expanded'],['804445','EtG Alcohol Hair'],['816062','7 Panel Hair'],['816212','9 Panel Hair'],['816000','12 Panel Hair'],['816389','14 Panel Hair']
 ];
-const api=(action,extra={})=>window.TestingAuth.invoke(window.TESTING_PORTAL_CONFIG.labcorpOrderFunction,{action,...extra});
+const api=async(action,extra={})=>{
+ const {data,error}=await window.testingSupabase.functions.invoke(window.TESTING_PORTAL_CONFIG.labcorpOrderFunction,{body:{action,...extra}});
+ if(error){let detail='';try{const response=error.context;if(response&&typeof response.json==='function'){const parsed=await response.json();detail=parsed?.error||parsed?.message||'';}}catch{}throw Error(detail||error.message||'Labcorp request failed');}
+ if(data?.error)throw Error(data.error);return data;
+};
 const state={busy:false,results:new Map()};
 function view(){
  $('#tmPage').innerHTML=`<div class="tm-page-head"><div><span class="tm-kicker">SCREENINGS4U TESTING · LABCORP OTS</span><h1>Labcorp Integration & Validation</h1><p>Verify Labcorp certification connectivity and panel details before allowing registrations. These actions do not register donors.</p></div><div class="tm-actions"><a class="tm-btn" href="labcorp-orders.html">Labcorp Orders</a></div></div>
