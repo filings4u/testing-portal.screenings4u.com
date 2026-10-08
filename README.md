@@ -29,3 +29,12 @@ This package restarts `testing-portal.screenings4u.com` on the same management p
 - result-upload.html
 - result-history.html
 Backend: testing-result-management
+
+
+## Donor Passes module
+- donor-passes.html
+- donor-pass-create.html
+- donor-pass.html
+- donor-pass-delivery.html
+- donor-pass-history.html
+Backend: testing-donor-pass-management
