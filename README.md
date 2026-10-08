@@ -70,3 +70,36 @@ Backend: testing-work-order-management
 - customer-organizations.html
 - customer-history.html
 Backend: testing-customer-management
+
+
+## Providers module
+- providers.html
+- provider-create.html
+- provider.html
+- provider-services.html
+- provider-locations.html
+- provider-contacts.html
+- provider-history.html
+Backend: testing-provider-management
+Provider sources: compliance_collection_sites, compliance_laboratories, compliance_mros
+Collector Network intentionally remains separate.
+
+
+## Background Checks module
+- background-checks.html
+- background-check-create.html
+- background-check.html
+- background-check-candidate.html
+- background-check-package.html
+- background-check-events.html
+
+Backend:
+- testing-background-check-management
+- checkr-webhook
+
+Checkr credentials remain server-side. Expected secrets:
+- CHECKR_API_KEY
+- CHECKR_ENVIRONMENT (production or staging)
+- CHECKR_WEBHOOK_SECRET (optional; falls back to CHECKR_CLIENT_SECRET or CHECKR_API_KEY for signature validation)
+
+Hosted invitation flow is used so sensitive candidate PII and consent are collected by Checkr, not by this management portal.
