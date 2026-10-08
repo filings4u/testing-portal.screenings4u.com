@@ -33,3 +33,27 @@ body[data-page="labcorp-validation"] .tm-table td:last-child .tm-btn {min-width:
 body[data-page="labcorp-validation"] .lc-response-text {white-space:pre-wrap;overflow-wrap:anywhere;max-height:380px;overflow:auto;margin:10px 0 0;padding:14px;background:#f7f9fc;border:1px solid var(--line);border-radius:8px;font-size:12px;line-height:1.65}
 @media(max-width:900px){body[data-page="labcorp-validation"] .lc-account-grid {grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:620px){body[data-page="labcorp-validation"] .tm-page-head {display:block}body[data-page="labcorp-validation"] .tm-card-head,body[data-page="labcorp-validation"] .tm-card-body {padding:15px}body[data-page="labcorp-validation"] .lc-account-grid {grid-template-columns:1fr;gap:12px}body[data-page="labcorp-validation"] .lc-control-row {align-items:stretch;flex-direction:column}body[data-page="labcorp-validation"] .lc-control-row .tm-btn {width:100%}body[data-page="labcorp-validation"] .lc-panel-controls {display:grid;grid-template-columns:1fr 1fr}body[data-page="labcorp-validation"] .lc-panel-controls .tm-field {grid-column:1/-1;width:100%}body[data-page="labcorp-validation"] .lc-panel-controls .tm-btn {width:100%;font-size:12px;padding:8px}body[data-page="labcorp-validation"] .tm-table {table-layout:auto;min-width:580px}body[data-page="labcorp-validation"] .tm-table th,body[data-page="labcorp-validation"] .tm-table td {padding:11px 12px}}
+
+/* Labcorp Catalog Review: page-specific desktop/mobile layout */
+body[data-page="labcorp-catalog-review"] .tm-page-head {align-items:flex-start;gap:20px;flex-wrap:wrap;margin-bottom:18px}
+body[data-page="labcorp-catalog-review"] .tm-page-head > div:first-child {flex:1 1 420px;min-width:0}
+body[data-page="labcorp-catalog-review"] .tm-page-head h1 {font-size:28px;line-height:1.22;margin:7px 0}
+body[data-page="labcorp-catalog-review"] .tm-page-head p {font-size:13px;line-height:1.6;max-width:700px;margin:0}
+body[data-page="labcorp-catalog-review"] .tm-actions {display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+body[data-page="labcorp-catalog-review"] .tm-card {margin-bottom:16px;overflow:hidden}
+body[data-page="labcorp-catalog-review"] .tm-card-head {padding:15px 18px}
+body[data-page="labcorp-catalog-review"] .tm-card-body {padding:16px 18px}
+body[data-page="labcorp-catalog-review"] .tm-banner {padding:13px 17px;margin-bottom:16px;font-size:12px;line-height:1.55}
+body[data-page="labcorp-catalog-review"] .tm-table-wrap {overflow-x:auto;max-width:100%}
+body[data-page="labcorp-catalog-review"] .tm-table {width:100%;border-collapse:collapse;table-layout:fixed;min-width:740px}
+body[data-page="labcorp-catalog-review"] .tm-table th {padding:10px 14px;font-size:10px;letter-spacing:.04em}
+body[data-page="labcorp-catalog-review"] .tm-table td {padding:9px 14px;font-size:12px;vertical-align:middle;overflow-wrap:anywhere;line-height:1.4}
+body[data-page="labcorp-catalog-review"] .tm-table td small {display:block;font-size:10px;line-height:1.4;margin-top:2px;max-width:560px}
+body[data-page="labcorp-catalog-review"] .tm-table .tm-btn {min-height:34px;padding:7px 12px;white-space:nowrap}
+body[data-page="labcorp-catalog-review"] .tm-table th:nth-child(1) {width:22%}
+body[data-page="labcorp-catalog-review"] .tm-table th:nth-child(2) {width:23%}
+body[data-page="labcorp-catalog-review"] .tm-table th:nth-child(3) {width:26%}
+body[data-page="labcorp-catalog-review"] .tm-table th:nth-child(4) {width:17%}
+body[data-page="labcorp-catalog-review"] .tm-table th:nth-child(5) {width:12%}
+body[data-page="labcorp-catalog-review"] #panelNotes {font:12px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace;margin:0;white-space:pre-wrap}
+@media(max-width:760px) {body[data-page="labcorp-catalog-review"] .tm-page-head h1 {font-size:23px}body[data-page="labcorp-catalog-review"] .tm-card-head,body[data-page="labcorp-catalog-review"] .tm-card-body {padding:13px}body[data-page="labcorp-catalog-review"] .tm-actions {width:100%}body[data-page="labcorp-catalog-review"] .tm-actions .tm-btn {flex:1 1 auto;text-align:center}}
