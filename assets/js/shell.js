@@ -2,11 +2,12 @@
 const page=(location.pathname.split('/').pop()||'dashboard.html').toLowerCase();
 const groups=[
  ['Control Center',[['dashboard.html','Dashboard','⌂']]],
- ['Testing Management',[['testing-operations.html','Testing Operations','▶'],['cases.html','Cases','▣']]]
+ ['Testing Management',[['testing-operations.html','Testing Operations','▶'],['cases.html','Cases','▣'],['orders.html','Orders','▤']]]
 ];
 const children={
  'testing-operations.html':['testing-case.html','testing-case-schedule.html','testing-donor-pass.html','testing-collection.html','testing-lab-routing.html','testing-mro-review.html','testing-result-release.html','testing-case-events.html'],
- 'cases.html':['case-create.html','case.html','case-customer.html','case-documents.html','case-history.html']
+ 'cases.html':['case-create.html','case.html','case-customer.html','case-documents.html','case-history.html'],
+ 'orders.html':['order-create.html','order.html','order-items.html','order-customer.html','order-payment.html','order-cases.html']
 };
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function nav(){return groups.map(([g,items])=>`<div class="tm-nav-group"><span>${esc(g)}</span>${items.map(([href,label,icon])=>{const active=page===href||(children[href]||[]).includes(page);return `<a href="${href}" class="${active?'active':''}"><i>${icon}</i><b>${esc(label)}</b></a>`}).join('')}</div>`).join('')}
