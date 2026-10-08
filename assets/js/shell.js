@@ -10,7 +10,7 @@ const children={
  'orders.html':['order-create.html','order.html','order-items.html','order-customer.html','order-payment.html','order-cases.html'],
  'labcorp-orders.html':['labcorp-order-create.html','labcorp-order.html','labcorp-order-registration.html','labcorp-order-sites.html','labcorp-order-results.html','labcorp-order-events.html'],
  'results.html':['result.html','result-documents.html','result-upload.html','result-history.html'],
- 'donor-passes.html':['donor-pass-create.html','donor-pass.html','donor-pass-delivery.html','donor-pass-history.html'],
+ 'donor-passes.html':['donor-pass-create.html','donor-pass.html','donor-pass-labcorp.html','donor-pass-delivery.html','donor-pass-history.html'],
  'service-requests.html':['service-request-create.html','service-request.html','service-request-customer.html','service-request-assignment.html','service-request-history.html'],
  'work-orders.html':['work-order-create.html','work-order.html','work-order-assignment.html','work-order-services.html','work-order-customer.html','work-order-history.html'],
  'customers.html':['customer.html','customer-portal-access.html','customer-orders.html','customer-cases.html','customer-organizations.html','customer-history.html'],
