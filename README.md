@@ -48,3 +48,14 @@ Backend: testing-donor-pass-management
 - service-request-assignment.html
 - service-request-history.html
 Backend: testing-service-request-management
+
+
+## Work Orders module
+- work-orders.html
+- work-order-create.html
+- work-order.html
+- work-order-assignment.html
+- work-order-services.html
+- work-order-customer.html
+- work-order-history.html
+Backend: testing-work-order-management
