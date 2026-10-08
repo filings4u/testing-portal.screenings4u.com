@@ -22,11 +22,29 @@ async function list(){
 }
 
 async function create(){
- const d=await api('options');
+ const [d,catalog]=await Promise.all([api('options'),api('catalog_review')]);
  const orders=[['','No linked commercial order'],...(d.orders||[]).map(o=>[o.id,`${o.order_number} — ${o.customer_email||'Customer'}`])];
  const cases=[['','No linked Testing case'],...(d.cases||[]).map(c=>[c.id,`${c.case_number} — ${c.donor_name||c.customer_name||'Donor'}`])];
- const initialOrder=orderId(), initialCase=caseId();
- return head('Create Labcorp Order','Create the Labcorp requisition record. Submission stays disabled until Labcorp OTS credentials are configured.','<a class="tm-btn" href="labcorp-orders.html">Back to Labcorp Orders</a>')+integration(d.integration)+`<section class="tm-card"><div class="tm-card-head"><div><h2>Labcorp Registration Draft</h2><p>This is the operational lab order. Billing and payment stay on the commercial Testing Order.</p></div></div><div class="tm-card-body"><form id="f" class="tm-builder-form">${select('Commercial Testing Order','order_id',orders,initialOrder)}${select('Testing Case','testing_case_id',cases,initialCase)}${field('Labcorp Account Number','account_number','')}${field('Account Location Code','account_location_code','')}${field('Donor First Name','donor_first_name','')}${field('Middle Initial','donor_middle_initial','')}${field('Donor Last Name','donor_last_name','')}${field('Donor Email','donor_email','','email')}${field('Donor Phone','donor_phone','')}${field('Employee / Donor ID','donor_id','')}${field('State of Residence','donor_state_of_residence','')}${select('Reason for Test','donor_reason_for_test',[['PE','Pre-Employment'],['RA','Random'],['PA','Post Accident'],['RC','Reasonable Cause'],['RD','Return To Duty'],['FU','Follow-Up'],['PM','Periodic Medical'],['OT','Other'],['NI','Not Indicated']],'PE')}${field('Donor Date of Birth','donor_date_of_birth','','date')}${field('CDL State','cdl_state','')}${field('CDL Number','cdl_number','')}${textarea('Panel IDs (one per line)','panel_ids','')}${select('Testing Authority','testing_authority',[['','Non-DOT / Not Required'],['FMCSA','FMCSA'],['FAA','FAA'],['FRA','FRA'],['FTA','FTA'],['PHMSA','PHMSA'],['USCG','USCG'],['HHS','HHS'],['NRC','NRC']],'')}${field('Registration Expiration','registration_expiration_at','','datetime-local')}<div class="wide tm-check"><label><input type="checkbox" name="observed_collection_requested"> Observed Collection Requested</label></div><div class="wide tm-check"><label><input type="checkbox" name="split_specimen_requested"> Split Specimen Requested</label></div>${textarea('Notes','notes','')}<div class="wide tm-actions"><button class="tm-btn primary" type="submit">Create Labcorp Order</button></div></form></div></section>`
+ const assigned=(catalog.assigned_panels||[]).filter(p=>p.account_number==='101101'&&p.account_location_code==='101101');
+ const allowed=assigned.filter(p=>p.panel_id!=='780110'&&/getPanelDetails returned|certification getPanelDetails returned/i.test(p.notes||''));
+ const panelOptions=allowed.map(p=>[p.panel_id,p.panel_id+(p.panel_id==='0191150006'?' — Account default':'')]);
+ if(!panelOptions.length)throw new Error('No reviewed certification panels are available. Check Labcorp Catalog Review.');
+ return head('Create Labcorp Order','Prepare a certification donor-registration draft for account 101101. Saving the draft does not contact Labcorp.','<a class="tm-btn" href="labcorp-orders.html">Back to Labcorp Orders</a><a class="tm-btn" href="labcorp-catalog-review.html">Catalog Review</a>')+
+ `<div class="tm-banner warn"><strong>Certification draft only · account 101101 / location 101101</strong><div>Only the nine assigned panels that returned details can be selected here. Panel 780110 returned no analyte details. No registration will be submitted when saving this form; product mappings remain pending.</div></div>`+
+ `<section class="tm-card"><div class="tm-card-head"><div><h2>Labcorp Registration Draft</h2><p>Use certification test-donor information only. Commercial billing stays on the linked Testing Order.</p></div></div><div class="tm-card-body"><form id="f" class="tm-builder-form">`+
+ select('Commercial Testing Order','order_id',orders,orderId())+select('Testing Case','testing_case_id',cases,caseId())+
+ field('Labcorp Account Number','account_number','101101','text','readonly required')+field('Account Location Code','account_location_code','101101','text','readonly required')+
+ select('Certification Panel','cert_panel',panelOptions,'0191150006')+
+ field('Donor First Name','donor_first_name','','text','required maxlength="80"')+field('Middle Initial','donor_middle_initial','','text','maxlength="1"')+field('Donor Last Name','donor_last_name','','text','required maxlength="80"')+
+ field('Donor Email','donor_email','','email')+field('Donor Phone','donor_phone')+field('Employee / Donor ID','donor_id')+
+ field('State of Residence (2-letter code)','donor_state_of_residence','','text','required minlength="2" maxlength="2" pattern="[A-Za-z]{2}"')+
+ select('Reason for Test','donor_reason_for_test',[['PE','Pre-Employment'],['RA','Random'],['PA','Post Accident'],['RC','Reasonable Cause'],['RD','Return To Duty'],['FU','Follow-Up'],['PM','Periodic Medical'],['OT','Other'],['NI','Not Indicated']],'PE')+
+ field('Donor Date of Birth','donor_date_of_birth','','date')+field('CDL State','cdl_state')+field('CDL Number','cdl_number')+
+ select('Testing Authority','testing_authority',[['','Non-DOT / Not Required'],['FMCSA','FMCSA'],['FAA','FAA'],['FRA','FRA'],['FTA','FTA'],['PHMSA','PHMSA'],['USCG','USCG'],['HHS','HHS'],['NRC','NRC']],'')+
+ field('Registration Expiration','registration_expiration_at','','datetime-local','required')+
+ `<div class="wide tm-check"><label><input type="checkbox" name="observed_collection_requested"> Observed Collection Requested</label></div><div class="wide tm-check"><label><input type="checkbox" name="split_specimen_requested"> Split Specimen Requested</label></div>`+
+ textarea('Internal Notes','notes')+
+ `<div class="wide tm-actions"><button class="tm-btn primary" type="submit" id="saveDraft">Save Certification Draft</button><a class="tm-btn" href="labcorp-orders.html">Cancel</a></div></form></div></section>`;
 }
 
 async function record(){
@@ -62,7 +80,7 @@ function bindSearch(){const s=$('#tmSearch'),f=$('#tmFilter');const run=()=>{con
 function formPayload(f){const x=fd(f);if('panel_ids'in x)x.panel_ids=lines(x.panel_ids);x.observed_collection_requested=!!f.querySelector('[name="observed_collection_requested"]')?.checked;x.split_specimen_requested=!!f.querySelector('[name="split_specimen_requested"]')?.checked;return x}
 function bind(page){
  if(page==='labcorp-orders')bindSearch();
- if(page==='labcorp-order-create')$('#f').onsubmit=async e=>{e.preventDefault();try{const r=await api('create',formPayload(e.target));toast('Labcorp order created.');location.href='labcorp-order.html?id='+encodeURIComponent(r.labcorp_order.id)}catch(err){toast(err.message||String(err),true)}};
+ if(page==='labcorp-order-create')$('#f').onsubmit=async e=>{e.preventDefault();const button=$('#saveDraft');if(button?.disabled)return;try{const payload=formPayload(e.target);payload.panel_ids=[payload.cert_panel];delete payload.cert_panel;payload.donor_state_of_residence=String(payload.donor_state_of_residence||'').trim().toUpperCase();if(payload.account_number!=='101101'||payload.account_location_code!=='101101')throw new Error('Certification account and location must be 101101.');button.disabled=true;button.textContent='Saving Draft…';const r=await api('create',payload);toast('Certification draft saved. No Labcorp submission was made.');location.href='labcorp-order.html?id='+encodeURIComponent(r.labcorp_order.id)}catch(err){toast(err.message||String(err),true);button.disabled=false;button.textContent='Save Certification Draft'}};
  if(page==='labcorp-order')$('#f').onsubmit=async e=>{e.preventDefault();try{await api('update',{id:id(),...formPayload(e.target)});toast('Labcorp order saved.');location.reload()}catch(err){toast(err.message||String(err),true)}};
  if(page==='labcorp-order-registration'){
    $('#submit')?.addEventListener('click',async()=>{try{await api('submit',{id:id()});toast('Labcorp registration created.');location.reload()}catch(err){toast(err.message||String(err),true)}});

@@ -57,3 +57,14 @@ body[data-page="labcorp-catalog-review"] .tm-table th:nth-child(4) {width:17%}
 body[data-page="labcorp-catalog-review"] .tm-table th:nth-child(5) {width:12%}
 body[data-page="labcorp-catalog-review"] #panelNotes {font:12px/1.65 ui-monospace,SFMono-Regular,Consolas,monospace;margin:0;white-space:pre-wrap}
 @media(max-width:760px) {body[data-page="labcorp-catalog-review"] .tm-page-head h1 {font-size:23px}body[data-page="labcorp-catalog-review"] .tm-card-head,body[data-page="labcorp-catalog-review"] .tm-card-body {padding:13px}body[data-page="labcorp-catalog-review"] .tm-actions {width:100%}body[data-page="labcorp-catalog-review"] .tm-actions .tm-btn {flex:1 1 auto;text-align:center}}
+
+/* Labcorp order-create: consistent portal-sized form and actions */
+body[data-page="labcorp-order-create"] .tm-page-head h1{font-size:28px;line-height:1.25}
+body[data-page="labcorp-order-create"] .tm-page-head p{font-size:13px;line-height:1.55}
+body[data-page="labcorp-order-create"] .tm-card-head{padding:16px 20px}
+body[data-page="labcorp-order-create"] .tm-card-body{padding:20px}
+body[data-page="labcorp-order-create"] .tm-builder-form{column-gap:18px;row-gap:15px}
+body[data-page="labcorp-order-create"] .tm-field label{font-size:12px}
+body[data-page="labcorp-order-create"] .tm-field input,body[data-page="labcorp-order-create"] .tm-field select,body[data-page="labcorp-order-create"] .tm-field textarea{font-size:13px;max-width:100%;box-sizing:border-box}
+body[data-page="labcorp-order-create"] .tm-field input[readonly]{background:#f3f6fa;color:#435674}
+@media(max-width:760px){body[data-page="labcorp-order-create"] .tm-page-head h1{font-size:23px}body[data-page="labcorp-order-create"] .tm-card-body{padding:14px}}
