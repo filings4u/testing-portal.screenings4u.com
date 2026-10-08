@@ -1,19 +1,22 @@
-# Screenings4u Testing Management — Foundation
+# Screenings4u Testing Management Portal — Management Shell Reset
 
-Target host: testing-portal.screenings4u.com
-Managed surfaces:
-- screenings4u.com
-- customers.screenings4u.com
+This package restarts `testing-portal.screenings4u.com` on the same management portal shell used by Training, DOT, and NON-DOT management.
 
-Security:
-- No direct local management login.
-- Entry is issued only by enterprise.screenings4u.com Portal Selector.
-- management-portal-handoff validates the Testing portal session on protected pages.
+## Rules
+- Enterprise selector is the only login/entry path.
+- Only `dashboard.html` is a dashboard.
+- Every other page is a records or management page.
+- No customer-portal shell or customer navigation is used.
+- Management forms live on dedicated pages, not modals.
+- Modals are reserved for confirmations/session security.
 
-Backend boundary:
-- testing-management-context
-- testing-management-read
+## Live backend boundaries
+- `testing-management-context`
+- `testing-management-read`
+- `testing-operations-management`
+- `testing-case-management`
 
-Existing Testing workflow services remain authoritative until migrated module-by-module.
-
-This foundation intentionally contains only dashboard.html. No placeholder management pages or dead navigation links are included.
+## Implemented modules
+1. Dashboard
+2. Testing Operations
+3. Cases

@@ -1,0 +1,10 @@
+(()=>{'use strict';
+const IDLE=10*60*1000,WARN=60*1000,KEY='s4u-testing-management-last-activity';let modal=null,timer=null,lastWrite=0,loggingOut=false;const now=()=>Date.now();
+function mark(force=false){const t=now();if(!force&&t-lastWrite<4000)return;lastWrite=t;localStorage.setItem(KEY,String(t))}function close(){modal?.remove();modal=null}
+async function logout(){if(loggingOut)return;loggingOut=true;close();clearInterval(timer);await window.TestingAuth.signOut()}
+async function stay(){try{const r=await window.testingSupabase.auth.refreshSession();if(r.error||!r.data?.session)throw r.error||new Error('Session expired');await window.TestingAuth.requireAuth();mark(true);close()}catch{logout()}}
+function show(ms){if(modal)return;modal=document.createElement('div');modal.className='tm-session-modal';modal.innerHTML=`<div class="tm-session-card"><img src="images/logo.png" alt="Screenings4u"><span class="tm-kicker">SECURE MANAGEMENT SESSION</span><h2>Your session is about to expire</h2><p>You have been inactive. For security, this management session signs out after 10 minutes of inactivity.</p><div class="tm-count">Signing out in <strong data-countdown>1:00</strong></div><div class="tm-session-actions"><button class="tm-btn" data-logout>Log Out</button><button class="tm-btn primary" data-stay>Stay Logged In</button></div></div>`;document.body.appendChild(modal);modal.querySelector('[data-stay]').onclick=stay;modal.querySelector('[data-logout]').onclick=logout;update(ms)}
+function update(ms){const el=modal?.querySelector('[data-countdown]');if(!el)return;const s=Math.max(0,Math.ceil(ms/1000));el.textContent=`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`}
+function tick(){const last=Number(localStorage.getItem(KEY)||0)||now(),rem=IDLE-(now()-last);if(rem<=0)return logout();if(rem<=WARN){show(rem);update(rem)}else close()}
+function init(){mark(!localStorage.getItem(KEY));['pointerdown','keydown','touchstart','scroll','mousemove'].forEach(ev=>window.addEventListener(ev,()=>{if(!modal)mark(false)},{passive:true,capture:true}));timer=setInterval(tick,1000);tick()}
+window.TestingSecurity=Object.freeze({init});})();
