@@ -5,3 +5,31 @@
 .tm-builder-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}.tm-builder-form .wide{grid-column:1/-1}.tm-check-list,.tm-stack{display:grid;gap:9px}.tm-check-row{display:flex;align-items:center;gap:9px;color:#405571}.tm-check-row input{width:auto;min-height:0}.tm-grid .two-thirds{grid-column:span 8}.tm-grid .one-third{grid-column:span 4}.tm-toast{position:fixed;right:24px;bottom:24px;z-index:10050;max-width:420px;padding:12px 16px;border-radius:9px;background:#17365f;color:#fff;box-shadow:0 12px 30px rgba(0,0,0,.18);opacity:0;transform:translateY(10px);pointer-events:none;transition:.2s}.tm-toast.error{background:#9f251b}.tm-toast.show{opacity:1;transform:none}.tm-dialog-backdrop{position:fixed;inset:0;z-index:10040;background:rgba(17,38,67,.62);display:grid;place-items:center;padding:24px}.tm-dialog{width:min(480px,100%);background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 22px 60px rgba(0,0,0,.24)}.tm-dialog-brand{padding:18px 22px;background:#17365f}.tm-dialog-brand img{max-width:220px;height:auto}.tm-dialog-body{padding:22px}.tm-dialog-body h2{margin:0 0 8px;color:#17365f}.tm-dialog-body p{color:#6b7b91;line-height:1.6}.tm-dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:18px}.tm-option-list{display:grid;gap:10px}.tm-option-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:10px;align-items:center}.tm-option-row>input{min-height:40px;padding:8px 11px;border:1px solid #cfd9e6;border-radius:8px}.tm-option-correct{display:flex;align-items:center;gap:7px;white-space:nowrap;font-weight:700;color:#405571}.tm-option-correct input{width:auto}.tm-divider{height:1px;background:var(--soft);margin:6px 0}.tm-btn[hidden]{display:none!important}@media(max-width:900px){.tm-grid .two-thirds,.tm-grid .one-third{grid-column:span 12}.tm-builder-form{grid-template-columns:1fr}.tm-builder-form .wide{grid-column:auto}.tm-option-row{grid-template-columns:1fr}.tm-option-correct{justify-content:flex-start}}
 
 .tm-money{font-variant-numeric:tabular-nums;font-weight:800;color:var(--navy)}.tm-subnav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}.tm-subnav a{font-size:11px}.tm-readonly{background:#f7f9fc!important;color:#687b93!important}.tm-summary-list{display:grid;gap:10px}.tm-summary-row{display:flex;justify-content:space-between;gap:16px;padding:9px 0;border-bottom:1px solid var(--soft)}.tm-summary-row:last-child{border-bottom:0}.tm-summary-row span{color:var(--muted)}.tm-summary-row strong{color:var(--navy)}
+
+/* Labcorp validation: page-specific responsive form and table layout */
+body[data-page="labcorp-validation"] .tm-page-head {align-items:center}
+body[data-page="labcorp-validation"] .tm-page-head > div:first-child {min-width:0}
+body[data-page="labcorp-validation"] .tm-card {margin-bottom:16px}
+body[data-page="labcorp-validation"] .tm-card-body {padding:20px 22px}
+body[data-page="labcorp-validation"] .tm-card-head {padding:17px 22px}
+body[data-page="labcorp-validation"] .lc-account-grid {display:grid;grid-template-columns:repeat(3,minmax(180px,1fr));gap:16px;max-width:810px;margin-bottom:20px}
+body[data-page="labcorp-validation"] .lc-account-grid .tm-field {min-width:0}
+body[data-page="labcorp-validation"] .lc-account-grid input {width:100%;min-width:0;background:#f7f9fc;color:#405571}
+body[data-page="labcorp-validation"] .lc-control-row {display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+body[data-page="labcorp-validation"] .lc-control-row .tm-btn {flex-shrink:0}
+body[data-page="labcorp-validation"] #connectionResult {font-size:12px;color:var(--muted);line-height:1.5}
+body[data-page="labcorp-validation"] .lc-account .tm-card-body > p {margin:0;color:var(--muted);font-size:12px;line-height:1.6}
+body[data-page="labcorp-validation"] .lc-panel-controls {display:flex;align-items:end;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+body[data-page="labcorp-validation"] .lc-panel-controls .tm-field {width:215px;max-width:100%}
+body[data-page="labcorp-validation"] .lc-panel-controls .tm-btn {min-height:40px;white-space:normal}
+body[data-page="labcorp-validation"] #runStatus {font-size:12px;line-height:1.5;color:var(--muted);min-height:18px}
+body[data-page="labcorp-validation"] .tm-table {table-layout:fixed}
+body[data-page="labcorp-validation"] .tm-table th:nth-child(1) {width:18%}
+body[data-page="labcorp-validation"] .tm-table th:nth-child(2) {width:37%}
+body[data-page="labcorp-validation"] .tm-table th:nth-child(3) {width:27%}
+body[data-page="labcorp-validation"] .tm-table th:nth-child(4) {width:18%}
+body[data-page="labcorp-validation"] .tm-table th,body[data-page="labcorp-validation"] .tm-table td {padding:13px 16px;vertical-align:middle}
+body[data-page="labcorp-validation"] .tm-table td:last-child .tm-btn {min-width:68px}
+body[data-page="labcorp-validation"] .lc-response-text {white-space:pre-wrap;overflow-wrap:anywhere;max-height:380px;overflow:auto;margin:10px 0 0;padding:14px;background:#f7f9fc;border:1px solid var(--line);border-radius:8px;font-size:12px;line-height:1.65}
+@media(max-width:900px){body[data-page="labcorp-validation"] .lc-account-grid {grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:620px){body[data-page="labcorp-validation"] .tm-page-head {display:block}body[data-page="labcorp-validation"] .tm-card-head,body[data-page="labcorp-validation"] .tm-card-body {padding:15px}body[data-page="labcorp-validation"] .lc-account-grid {grid-template-columns:1fr;gap:12px}body[data-page="labcorp-validation"] .lc-control-row {align-items:stretch;flex-direction:column}body[data-page="labcorp-validation"] .lc-control-row .tm-btn {width:100%}body[data-page="labcorp-validation"] .lc-panel-controls {display:grid;grid-template-columns:1fr 1fr}body[data-page="labcorp-validation"] .lc-panel-controls .tm-field {grid-column:1/-1;width:100%}body[data-page="labcorp-validation"] .lc-panel-controls .tm-btn {width:100%;font-size:12px;padding:8px}body[data-page="labcorp-validation"] .tm-table {table-layout:auto;min-width:580px}body[data-page="labcorp-validation"] .tm-table th,body[data-page="labcorp-validation"] .tm-table td {padding:11px 12px}}
