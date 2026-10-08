@@ -2,12 +2,13 @@
 const page=(location.pathname.split('/').pop()||'dashboard.html').toLowerCase();
 const groups=[
  ['Control Center',[['dashboard.html','Dashboard','⌂']]],
- ['Testing Management',[['testing-operations.html','Testing Operations','▶'],['cases.html','Cases','▣'],['orders.html','Orders','▤'],['results.html','Results','✓'],['donor-passes.html','Donor Passes','⌁'],['service-requests.html','Service Requests','≡'],['work-orders.html','Work Orders','▣'],['customers.html','Customers & Portal Access','◉'],['providers.html','Providers','◆'],['background-checks.html','Background Checks','▧']]]
+ ['Testing Management',[['testing-operations.html','Testing Operations','▶'],['cases.html','Cases','▣'],['orders.html','Orders','▤'],['labcorp-orders.html','Labcorp Orders','◫'],['results.html','Results','✓'],['donor-passes.html','Donor Passes','⌁'],['service-requests.html','Service Requests','≡'],['work-orders.html','Work Orders','▣'],['customers.html','Customers & Portal Access','◉'],['providers.html','Providers','◆'],['background-checks.html','Background Checks','▧']]]
 ];
 const children={
  'testing-operations.html':['testing-case.html','testing-case-schedule.html','testing-donor-pass.html','testing-collection.html','testing-lab-routing.html','testing-mro-review.html','testing-result-release.html','testing-case-events.html'],
  'cases.html':['case-create.html','case.html','case-customer.html','case-documents.html','case-history.html'],
  'orders.html':['order-create.html','order.html','order-items.html','order-customer.html','order-payment.html','order-cases.html'],
+ 'labcorp-orders.html':['labcorp-order-create.html','labcorp-order.html','labcorp-order-registration.html','labcorp-order-sites.html','labcorp-order-results.html','labcorp-order-events.html'],
  'results.html':['result.html','result-documents.html','result-upload.html','result-history.html'],
  'donor-passes.html':['donor-pass-create.html','donor-pass.html','donor-pass-delivery.html','donor-pass-history.html'],
  'service-requests.html':['service-request-create.html','service-request.html','service-request-customer.html','service-request-assignment.html','service-request-history.html'],

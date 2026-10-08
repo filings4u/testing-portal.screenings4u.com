@@ -103,3 +103,28 @@ Checkr credentials remain server-side. Expected secrets:
 - CHECKR_WEBHOOK_SECRET (optional; falls back to CHECKR_CLIENT_SECRET or CHECKR_API_KEY for signature validation)
 
 Hosted invitation flow is used so sensitive candidate PII and consent are collected by Checkr, not by this management portal.
+
+
+## Labcorp OTS Orders module
+- labcorp-orders.html
+- labcorp-order-create.html
+- labcorp-order.html
+- labcorp-order-registration.html
+- labcorp-order-sites.html
+- labcorp-order-results.html
+- labcorp-order-events.html
+
+Backends:
+- testing-labcorp-order-management
+- labcorp-ots-callback
+- testing-order-management v2 returns linked Labcorp orders
+
+Expected server-side Labcorp settings:
+- LABCORP_OTS_ENDPOINT
+- LABCORP_OTS_USER
+- LABCORP_OTS_PASSWORD
+- LABCORP_CALLBACK_USER
+- LABCORP_CALLBACK_PASSWORD
+
+The supplied Labcorp WSDL uses localhost service addresses; production URL is intentionally not hardcoded.
+Commercial Testing orders remain separate from operational Labcorp registrations.
