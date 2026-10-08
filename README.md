@@ -59,3 +59,14 @@ Backend: testing-service-request-management
 - work-order-customer.html
 - work-order-history.html
 Backend: testing-work-order-management
+
+
+## Customers & Portal Access module
+- customers.html
+- customer.html
+- customer-portal-access.html
+- customer-orders.html
+- customer-cases.html
+- customer-organizations.html
+- customer-history.html
+Backend: testing-customer-management

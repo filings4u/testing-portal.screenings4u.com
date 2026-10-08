@@ -2,7 +2,7 @@
 const page=(location.pathname.split('/').pop()||'dashboard.html').toLowerCase();
 const groups=[
  ['Control Center',[['dashboard.html','Dashboard','⌂']]],
- ['Testing Management',[['testing-operations.html','Testing Operations','▶'],['cases.html','Cases','▣'],['orders.html','Orders','▤'],['results.html','Results','✓'],['donor-passes.html','Donor Passes','⌁'],['service-requests.html','Service Requests','≡'],['work-orders.html','Work Orders','▣']]]
+ ['Testing Management',[['testing-operations.html','Testing Operations','▶'],['cases.html','Cases','▣'],['orders.html','Orders','▤'],['results.html','Results','✓'],['donor-passes.html','Donor Passes','⌁'],['service-requests.html','Service Requests','≡'],['work-orders.html','Work Orders','▣'],['customers.html','Customers & Portal Access','◉']]]
 ];
 const children={
  'testing-operations.html':['testing-case.html','testing-case-schedule.html','testing-donor-pass.html','testing-collection.html','testing-lab-routing.html','testing-mro-review.html','testing-result-release.html','testing-case-events.html'],
@@ -11,7 +11,8 @@ const children={
  'results.html':['result.html','result-documents.html','result-upload.html','result-history.html'],
  'donor-passes.html':['donor-pass-create.html','donor-pass.html','donor-pass-delivery.html','donor-pass-history.html'],
  'service-requests.html':['service-request-create.html','service-request.html','service-request-customer.html','service-request-assignment.html','service-request-history.html'],
- 'work-orders.html':['work-order-create.html','work-order.html','work-order-assignment.html','work-order-services.html','work-order-customer.html','work-order-history.html']
+ 'work-orders.html':['work-order-create.html','work-order.html','work-order-assignment.html','work-order-services.html','work-order-customer.html','work-order-history.html'],
+ 'customers.html':['customer.html','customer-portal-access.html','customer-orders.html','customer-cases.html','customer-organizations.html','customer-history.html']
 };
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function nav(){return groups.map(([g,items])=>`<div class="tm-nav-group"><span>${esc(g)}</span>${items.map(([href,label,icon])=>{const active=page===href||(children[href]||[]).includes(page);return `<a href="${href}" class="${active?'active':''}"><i>${icon}</i><b>${esc(label)}</b></a>`}).join('')}</div>`).join('')}
