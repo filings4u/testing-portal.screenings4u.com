@@ -16,6 +16,7 @@ const children={
  'customers.html':['customer.html','customer-portal-access.html','customer-orders.html','customer-cases.html','customer-organizations.html','customer-history.html'],
  'providers.html':['provider-create.html','provider.html','provider-services.html','provider-locations.html','provider-contacts.html','provider-history.html'],
  'background-checks.html':['background-check-create.html','background-check.html','background-check-candidate.html','background-check-package.html','background-check-events.html'],
+ 'catalog.html':['catalog-create.html','catalog-service.html','catalog-pricing.html','catalog-fulfillment.html','catalog-website.html','catalog-history.html'],
  'documents.html':['document-upload.html','document.html','document-history.html']
 };
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
