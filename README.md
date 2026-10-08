@@ -20,3 +20,12 @@ This package restarts `testing-portal.screenings4u.com` on the same management p
 1. Dashboard
 2. Testing Operations
 3. Cases
+
+
+## Results module
+- results.html
+- result.html
+- result-documents.html
+- result-upload.html
+- result-history.html
+Backend: testing-result-management
