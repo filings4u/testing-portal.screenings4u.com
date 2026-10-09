@@ -157,3 +157,20 @@ body[data-page="blog-preview"] .tm-preview-excerpt{font-size:16px;line-height:1.
 .tm-preview-body ul,.tm-preview-body ol,.tm-rich-editor ul,.tm-rich-editor ol{font-size:16px;line-height:1.75;margin:0 0 20px;padding-left:26px}
 .tm-preview-body img,.tm-rich-editor img{max-width:100%;height:auto;object-fit:contain}
 @media(max-width:640px){body[data-page="blog-preview"] .tm-blog-preview h1,.tm-preview-body h1,.tm-rich-editor h1{font-size:28px}.tm-preview-body h2,.tm-rich-editor h2{font-size:24px}}
+
+/* Catalog pricing: keep the submit action aligned within the price form. */
+body[data-page="catalog-pricing"] .tm-card-body #f > button.tm-btn.primary[type="submit"] {
+  display:flex;
+  width:100%;
+  min-height:44px;
+  margin-top:14px;
+  padding:11px 16px;
+  box-sizing:border-box;
+  font:inherit;
+  font-weight:800;
+  line-height:1.25;
+  text-align:center;
+  justify-content:center;
+  align-items:center;
+  border-radius:8px;
+}
