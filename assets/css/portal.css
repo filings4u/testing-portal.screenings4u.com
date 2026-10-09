@@ -141,3 +141,19 @@ body[data-page="blog-post"] .tm-seo-head p{margin:0;color:#677790;line-height:1.
  body[data-page="blog-create"] #tmInsertPanel,
  body[data-page="blog-post"] #tmInsertPanel{margin:0 8px 12px;padding:16px}
 }
+
+/* Article typography: one title heading and a readable semantic heading hierarchy. */
+body[data-page="blog-preview"] .tm-blog-preview h1{font-size:32px;line-height:1.25;letter-spacing:-.015em;font-weight:750;margin:24px 0 18px}
+body[data-page="blog-preview"] .tm-preview-excerpt{font-size:16px;line-height:1.7}
+.tm-preview-body,.tm-rich-editor{font-size:16px;line-height:1.75}
+.tm-preview-body :is(h1,h2,h3,h4,h5,h6),.tm-rich-editor :is(h1,h2,h3,h4,h5,h6){color:#173457;line-height:1.3;font-weight:700;letter-spacing:normal}
+.tm-preview-body h1,.tm-rich-editor h1{font-size:32px;margin:30px 0 16px}
+.tm-preview-body h2,.tm-rich-editor h2{font-size:26px;margin:28px 0 14px}
+.tm-preview-body h3,.tm-rich-editor h3{font-size:22px;margin:24px 0 12px}
+.tm-preview-body h4,.tm-rich-editor h4{font-size:19px;margin:22px 0 10px}
+.tm-preview-body h5,.tm-rich-editor h5{font-size:17px;margin:20px 0 9px}
+.tm-preview-body h6,.tm-rich-editor h6{font-size:16px;margin:18px 0 8px}
+.tm-preview-body p,.tm-rich-editor p{font-size:16px;line-height:1.75;margin:0 0 17px}
+.tm-preview-body ul,.tm-preview-body ol,.tm-rich-editor ul,.tm-rich-editor ol{font-size:16px;line-height:1.75;margin:0 0 20px;padding-left:26px}
+.tm-preview-body img,.tm-rich-editor img{max-width:100%;height:auto;object-fit:contain}
+@media(max-width:640px){body[data-page="blog-preview"] .tm-blog-preview h1,.tm-preview-body h1,.tm-rich-editor h1{font-size:28px}.tm-preview-body h2,.tm-rich-editor h2{font-size:24px}}

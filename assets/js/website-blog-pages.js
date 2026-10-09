@@ -102,7 +102,12 @@ async function media(){
 
 async function blogPreview(){
  const d=await blogApi('get',{id:id()}),p=d.post;
- const clean=window.DOMPurify?window.DOMPurify.sanitize(p.content_html||'',{USE_PROFILES:{html:true}}):esc(p.content_html||'');
+ let clean=window.DOMPurify?window.DOMPurify.sanitize(p.content_html||'',{USE_PROFILES:{html:true}}):esc(p.content_html||'');
+ // The CMS renders the post title as H1. Suppress an identical first heading in pasted article content.
+ const headingHost=document.createElement('div');headingHost.innerHTML=clean;
+ const first=Array.from(headingHost.children).find(el=>el.tagName!=='BR');
+ const normalize=t=>String(t||'').replace(/\s+/g,' ').trim().toLocaleLowerCase();
+ if(first&&/^H[1-6]$/.test(first.tagName)&&normalize(first.textContent)===normalize(p.title)){first.remove();clean=headingHost.innerHTML;}
  return head('Preview Blog Post','Staff-only preview of the saved version. Unpublished articles are not publicly accessible.',`<a class="tm-btn" href="blog-post.html?id=${encodeURIComponent(p.id)}">Back to Editor</a>${p.status==='published'?`<a class="tm-btn" href="https://screenings4u.com/blog.html?slug=${encodeURIComponent(p.slug)}" target="_blank" rel="noopener">Public Article</a>`:''}`)+`<section class="tm-card tm-blog-preview"><div class="tm-card-body"><div class="tm-preview-note">${badge(p.status)} · Draft preview in the management portal</div>${p.featured_image_url?`<img class="tm-preview-cover" alt="${esc(p.featured_image_alt||p.title)}" src="${esc(p.featured_image_url)}">`:''}<p class="tm-preview-category">${esc(p.category||'Insights')}</p><h1>${esc(p.title)}</h1><p class="tm-preview-excerpt">${esc(p.excerpt||'')}</p><div class="tm-preview-body">${clean}</div></div></section>`;
 }
 const renders={website, 'website-pages':pages,'website-page-create':pageCreate,'website-page':pageRecord,'website-history':history,blog,'blog-create':blogCreate,'blog-post':blogPost,'blog-media':media,'blog-preview':blogPreview};
