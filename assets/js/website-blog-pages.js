@@ -55,7 +55,7 @@ async function history(){
 async function blog(){
  const d=await blogApi('list');
  const rows=(d.posts||[]).map(p=>`<tr data-search="${esc(((p.title||'')+' '+(p.slug||'')+' '+(p.category||'')+' '+(p.author_name||'')).toLowerCase())}" data-status="${esc(p.status)}"><td><a href="blog-post.html?id=${p.id}"><strong>${esc(p.title)}</strong></a><small>${esc(p.slug||'')}</small></td><td>${esc(p.category||'—')}</td><td>${badge(p.status)}</td><td>${p.show_website?'Yes':'No'}</td><td>${p.featured?'Yes':'No'}</td><td>${dt(p.published_at||p.created_at)}</td><td><a class="tm-btn" href="blog-post.html?id=${p.id}">Manage</a></td></tr>`).join('');
- return head('Blog','Manage screenings4u.com Resources & Insights posts stored in the live blog_posts table.','<a class="tm-btn primary" href="blog-create.html">Create Blog Post</a><a class="tm-btn" href="blog-media.html">Media</a>')+`<div class="tm-searchbar"><input id="tmSearch" type="search" placeholder="Search blog posts…"><select id="tmFilter"><option value="">All statuses</option><option value="published">Published</option><option value="draft">Draft</option><option value="archived">Archived</option></select></div><section class="tm-card">${table(['Post','Category','Status','Website','Featured','Date',''],rows,'No Screenings4u blog posts found.')}</section>`
+ return head('Blog','Manage screenings4u.com Resources & Insights posts stored in the live screenings4u_blog table.','<a class="tm-btn primary" href="blog-create.html">Create Blog Post</a><a class="tm-btn" href="blog-media.html">Media</a>')+`<div class="tm-searchbar"><input id="tmSearch" type="search" placeholder="Search blog posts…"><select id="tmFilter"><option value="">All statuses</option><option value="published">Published</option><option value="draft">Draft</option><option value="archived">Archived</option></select></div><section class="tm-card">${table(['Post','Category','Status','Website','Featured','Date',''],rows,'No Screenings4u blog posts found.')}</section>`
 }
 
 function blogForm(p={}){
@@ -63,7 +63,7 @@ function blogForm(p={}){
 }
 
 async function blogCreate(){
- return head('Create Blog Post','Create a new Screenings4u blog post as a draft.','<a class="tm-btn" href="blog.html">Back to Blog</a>')+`<section class="tm-card"><div class="tm-card-head"><div><h2>Blog Post</h2><p>Publishing writes directly to the production blog_posts table consumed by screenings4u.com/blog.html.</p></div></div><div class="tm-card-body"><form id="f" class="tm-builder-form">${blogForm({author_name:'screenings4u'})}<div class="wide tm-actions"><button class="tm-btn primary" type="submit">Create Draft</button></div></form></div></section>`
+ return head('Create Blog Post','Create a new Screenings4u blog post as a draft.','<a class="tm-btn" href="blog.html">Back to Blog</a>')+`<section class="tm-card"><div class="tm-card-head"><div><h2>Blog Post</h2><p>Publishing writes directly to the production screenings4u_blog table consumed by screenings4u.com/blog.html.</p></div></div><div class="tm-card-body"><form id="f" class="tm-builder-form">${blogForm({author_name:'screenings4u'})}<div class="wide tm-actions"><button class="tm-btn primary" type="submit">Create Draft</button></div></form></div></section>`
 }
 
 async function blogPost(){
