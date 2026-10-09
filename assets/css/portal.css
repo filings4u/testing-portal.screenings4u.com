@@ -192,3 +192,10 @@ body[data-page="order-history"] #fulfillmentForm .tm-field{grid-column:1/-1;min-
 body[data-page="order-history"] #fulfillmentForm .tm-field select,body[data-page="order-history"] #fulfillmentForm .tm-field textarea{width:100%;box-sizing:border-box}
 body[data-page="order-history"] #fulfillmentForm .tm-field textarea{min-height:105px;resize:vertical}
 body[data-page="order-history"] #fulfillmentForm .tm-actions{grid-column:1/-1}
+
+/* Order history layout refinement */
+body[data-page="order-history"] #tmPage > .tm-card + .tm-card{margin-top:22px}
+body[data-page="order-history"] #fulfillmentForm{row-gap:12px}
+body[data-page="order-history"] #fulfillmentForm .tm-field textarea{height:84px;min-height:84px;max-height:180px}
+body[data-page="order-history"] #fulfillmentForm .tm-actions{margin-top:0;justify-content:flex-start}
+body[data-page="order-history"] #fulfillmentForm .tm-btn{min-height:40px}
