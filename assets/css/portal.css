@@ -174,3 +174,14 @@ body[data-page="catalog-pricing"] .tm-card-body #f > button.tm-btn.primary[type=
   align-items:center;
   border-radius:8px;
 }
+
+/* Testing Orders filters: scoped, responsive, no impact to other pages */
+.tm-searchbar:has(#tmPaymentFilter){display:grid;grid-template-columns:minmax(260px,2fr) repeat(3,minmax(135px,1fr));gap:12px;align-items:end}
+.tm-searchbar:has(#tmPaymentFilter) #tmSearch{grid-column:1 / -1;min-width:0;width:100%;box-sizing:border-box}
+.tm-searchbar:has(#tmPaymentFilter) select{width:100%;min-width:0;box-sizing:border-box}
+.tm-searchbar:has(#tmPaymentFilter) label{display:grid;gap:5px;min-width:0;font-size:12px;color:#385371}
+.tm-searchbar:has(#tmPaymentFilter) label input{width:100%;min-width:0;box-sizing:border-box}
+.tm-searchbar:has(#tmPaymentFilter) #tmClearFilters{min-height:40px;white-space:nowrap}
+.tm-searchbar:has(#tmPaymentFilter) #tmResultCount{align-self:center;white-space:nowrap}
+@media(max-width:1050px){.tm-searchbar:has(#tmPaymentFilter){grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.tm-searchbar:has(#tmPaymentFilter){grid-template-columns:minmax(0,1fr)}}
