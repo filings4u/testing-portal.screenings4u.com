@@ -129,16 +129,20 @@ function setupRichEditor(){
  const editor=$('#tmRichEditor'),toolbar=$('#tmEditorToolbar');if(!editor||!toolbar)return;
  editor.innerHTML=window.DOMPurify?window.DOMPurify.sanitize(editor.dataset.initial||'',{USE_PROFILES:{html:true}}):'';
  const recount=()=>{$('#tmWordCount').textContent=(editor.innerText.trim().match(/\S+/g)||[]).length+' words'};recount();editor.addEventListener('input',recount);
- const run=(cmd,v)=>{editor.focus();document.execCommand(cmd,false,v||null);recount()};
+ let savedRange=null;
+ const rememberSelection=()=>{const sel=window.getSelection();if(sel?.rangeCount&&editor.contains(sel.anchorNode))savedRange=sel.getRangeAt(0).cloneRange()};
+ const restoreSelection=()=>{editor.focus();if(!savedRange)return;const sel=window.getSelection();sel.removeAllRanges();sel.addRange(savedRange)};
+ ['mouseup','keyup','input','focusout'].forEach(event=>editor.addEventListener(event,rememberSelection));
+ const run=(cmd,v)=>{restoreSelection();document.execCommand(cmd,false,v||null);rememberSelection();recount()};
  toolbar.addEventListener('mousedown',e=>{if(e.target.closest('button'))e.preventDefault()});
  toolbar.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const cmd=b.dataset.cmd;if(cmd){run(cmd);return}
  const insert=b.dataset.insert;if(!insert)return;
  if(insert==='clear'){run('removeFormat');return}
  if(['divider','spacer'].includes(insert)){run('insertHTML',insert==='divider'?'<hr>':'<div class="article-spacer" style="height:32px" aria-hidden="true"></div>');return}
-const panel=$('#tmInsertPanel');panel.hidden=false;panel.dataset.kind=insert;$('#tmInsertUrl').focus();
+rememberSelection();const panel=$('#tmInsertPanel');panel.hidden=false;panel.dataset.kind=insert;$('#tmInsertUrl').focus();
  });
  $('#tmInsertCancel').onclick=()=>{$('#tmInsertPanel').hidden=true};
- $('#tmInsertApply').onclick=()=>{const panel=$('#tmInsertPanel'),url=$('#tmInsertUrl').value.trim(),label=$('#tmInsertLabel').value.trim(),kind=panel.dataset.kind;if(!/^https:\/\/[^\s]+$/i.test(url)){toast('Enter a valid HTTPS URL.',true);return}if(kind==='link')run('createLink',url);else if(kind==='button')run('insertHTML',`<a class="article-button" href="${esc(url)}">${esc(label||'Learn more')}</a>`);else if(kind==='image')run('insertHTML',`<img src="${esc(url)}" alt="${esc(label)}" loading="lazy">`);panel.hidden=true;$('#tmInsertUrl').value='';$('#tmInsertLabel').value=''};
+ $('#tmInsertApply').onclick=()=>{const panel=$('#tmInsertPanel'),url=$('#tmInsertUrl').value.trim(),label=$('#tmInsertLabel').value.trim(),kind=panel.dataset.kind;if(!/^https:\/\/[^\s]+$/i.test(url)){toast('Enter a valid HTTPS URL.',true);return}if(kind==='link'){restoreSelection();const selection=window.getSelection();if(selection?.isCollapsed){run('insertHTML',`<a href="${esc(url)}">${esc(label||url)}</a>`)}else run('createLink',url)}else if(kind==='button')run('insertHTML',`<a class="article-button" href="${esc(url)}">${esc(label||'Learn more')}</a>`);else if(kind==='image')run('insertHTML',`<img src="${esc(url)}" alt="${esc(label)}" loading="lazy">`);panel.hidden=true;$('#tmInsertUrl').value='';$('#tmInsertLabel').value=''};
  toolbar.querySelector('[data-format="block"]').onchange=e=>run('formatBlock',e.target.value);
  toolbar.querySelector('[data-format="font"]').onchange=e=>run('fontName',e.target.value);
  toolbar.querySelector('[data-color]').onchange=e=>run(e.target.dataset.color,e.target.value);
