@@ -185,3 +185,10 @@ body[data-page="catalog-pricing"] .tm-card-body #f > button.tm-btn.primary[type=
 .tm-searchbar:has(#tmPaymentFilter) #tmResultCount{align-self:center;white-space:nowrap}
 @media(max-width:1050px){.tm-searchbar:has(#tmPaymentFilter){grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:600px){.tm-searchbar:has(#tmPaymentFilter){grid-template-columns:minmax(0,1fr)}}
+
+/* Order History form: full-width fields without changing other management forms */
+body[data-page="order-history"] #fulfillmentForm{grid-template-columns:minmax(0,1fr);gap:14px}
+body[data-page="order-history"] #fulfillmentForm .tm-field{grid-column:1/-1;min-width:0}
+body[data-page="order-history"] #fulfillmentForm .tm-field select,body[data-page="order-history"] #fulfillmentForm .tm-field textarea{width:100%;box-sizing:border-box}
+body[data-page="order-history"] #fulfillmentForm .tm-field textarea{min-height:105px;resize:vertical}
+body[data-page="order-history"] #fulfillmentForm .tm-actions{grid-column:1/-1}
