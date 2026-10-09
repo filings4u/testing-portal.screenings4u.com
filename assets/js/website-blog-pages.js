@@ -115,6 +115,7 @@ const renders={website, 'website-pages':pages,'website-page-create':pageCreate,'
 function pagePayload(f){
  const x=fd(f);
  x.nav_visible=!!f.querySelector('[name="nav_visible"]')?.checked;
+ x.nav_control_change=f.dataset.navDirty==='true';
  x.seo_index=!!f.querySelector('[name="seo_index"]')?.checked;
  try{x.content_json=x.content_json?.trim()?JSON.parse(x.content_json):{}}catch{throw new Error('Managed Content JSON must be valid JSON.')}if(!x.content_json||Array.isArray(x.content_json)||typeof x.content_json!=='object')throw new Error('Managed Content JSON must be an object.');x.content_json.hero={...(x.content_json.hero||{}),heading:x.hero_heading||'',description:x.hero_description||''};delete x.hero_heading;delete x.hero_description;
  return x;
@@ -158,6 +159,7 @@ rememberSelection();const panel=$('#tmInsertPanel');panel.hidden=false;panel.dat
 function bind(page){
  if(['website-pages','blog'].includes(page))bindSearch();
  if(page==='website-page-create')$('#f').onsubmit=async e=>{e.preventDefault();try{const r=await websiteApi('create_page',pagePayload(e.target));toast('Page record created for the selected website.');location.href='website-page.html?id='+encodeURIComponent(r.page.id)}catch(err){toast(err.message||String(err),true)}};
+ if(page==='website-page')$('#f').querySelector('[name="nav_visible"]')?.addEventListener('change',()=>{$('#f').dataset.navDirty='true'});
  if(page==='website-page')$('#f').onsubmit=async e=>{e.preventDefault();try{await websiteApi('update_page',{id:id(),...pagePayload(e.target)});toast('Page record saved. Live display depends on website integration.');location.reload()}catch(err){toast(err.message||String(err),true)}};
  if(['blog-create','blog-post'].includes(page))setupRichEditor();
  if(page==='blog-create')$('#f').onsubmit=async e=>{e.preventDefault();try{const r=await blogApi('create',blogPayload(e.target));toast('Blog draft created.');location.href='blog-post.html?id='+encodeURIComponent(r.post.id)}catch(err){toast(err.message||String(err),true)}};
