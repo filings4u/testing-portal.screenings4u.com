@@ -59,11 +59,33 @@ async function blog(){
 }
 
 function blogForm(p={}){
- return `${field('Title','title',p.title||'')}${field('Slug','slug',p.slug||'')}${field('Category','category',p.category||'Insights')}${field('Author Name','author_name',p.author_name||'screenings4u')}${textarea('Excerpt','excerpt',p.excerpt||'',4)}${textarea('Plain Content','content',p.content||'',10)}${textarea('Content HTML','content_html',p.content_html||'',14)}${field('Featured Image URL','featured_image_url',p.featured_image_url||'')}${field('SEO Title','seo_title',p.seo_title||'')}${textarea('SEO Description','seo_description',p.seo_description||'',4)}${textarea('Tags (comma or line separated)','tags',Array.isArray(p.tags)?p.tags.join('\n'):'',4)}<div class="wide tm-check"><label><input type="checkbox" name="show_website" ${p.show_website?'checked':''}> Show on screenings4u.com</label></div><div class="wide tm-check"><label><input type="checkbox" name="show_customer_portal" ${p.show_customer_portal?'checked':''}> Show in Customer Portal</label></div><div class="wide tm-check"><label><input type="checkbox" name="show_employer_portal" ${p.show_employer_portal?'checked':''}> Show in Employer Portal</label></div><div class="wide tm-check"><label><input type="checkbox" name="featured" ${p.featured?'checked':''}> Featured Post</label></div>${textarea('Change Note','notes','',3)}`
+ const html=p.content_html||'';
+ return `<div class="wide tm-field"><label for="title">Post title</label><input id="title" name="title" required maxlength="180" value="${esc(p.title||'')}"></div>
+ <div class="tm-field"><label for="slug">URL slug</label><input id="slug" name="slug" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="my-article-slug" value="${esc(p.slug||'')}"><small>Public article: screenings4u.com/blog.html?slug=your-slug</small></div>
+ ${field('Category','category',p.category||'Insights')}${field('Author','author_name',p.author_name||'screenings4u')}
+ ${textarea('Short excerpt','excerpt',p.excerpt||'',3)}
+ <div class="wide tm-editor-block"><div class="tm-editor-title"><strong>Article editor</strong><span>Format content using the toolbar · Changes are saved with Save Draft / Save Post</span></div>
+ <div id="tmEditorToolbar" class="tm-editor-toolbar" role="toolbar" aria-label="Article formatting">
+ <select data-format="block" aria-label="Text style"><option value="p">Paragraph</option><option value="h1">Heading 1</option><option value="h2">Heading 2</option><option value="h3">Heading 3</option><option value="blockquote">Quote</option></select>
+ <select data-format="font" aria-label="Font"><option value="Arial">Arial</option><option value="Georgia">Georgia</option><option value="Verdana">Verdana</option><option value="Trebuchet MS">Trebuchet</option></select>
+ <button type="button" data-cmd="bold" title="Bold"><b>B</b></button><button type="button" data-cmd="italic" title="Italic"><i>I</i></button><button type="button" data-cmd="underline" title="Underline"><u>U</u></button><button type="button" data-cmd="insertUnorderedList" title="Bullets">• List</button><button type="button" data-cmd="insertOrderedList" title="Numbered list">1. List</button>
+ <button type="button" data-cmd="justifyLeft" title="Align left">Left</button><button type="button" data-cmd="justifyCenter" title="Align center">Center</button><button type="button" data-cmd="justifyRight" title="Align right">Right</button>
+ <button type="button" data-cmd="undo" title="Undo">↶ Undo</button><button type="button" data-cmd="redo" title="Redo">↷ Redo</button>
+ <button type="button" data-insert="link">Link</button><button type="button" data-insert="button">Button</button><button type="button" data-insert="image">Image</button><button type="button" data-insert="divider">Divider</button><button type="button" data-insert="spacer">Spacer</button><button type="button" data-insert="clear">Clear format</button>
+ <label class="tm-color-label">Text <input type="color" data-color="foreColor" value="#222222" aria-label="Text color"></label>
+ </div><div id="tmRichEditor" class="tm-rich-editor" contenteditable="true" role="textbox" aria-multiline="true" aria-label="Blog post content" data-initial="${esc(html)}"></div><textarea name="content_html" id="content_html" hidden></textarea>
+ <div class="tm-editor-foot"><span id="tmWordCount">0 words</span><span>Use Preview to see the finished post before publishing.</span></div></div>
+ <div class="wide tm-field"><label for="featured_image_url">Featured image URL</label><input id="featured_image_url" name="featured_image_url" value="${esc(p.featured_image_url||'')}"><div class="tm-actions"><label class="tm-btn" for="tmFeaturedUpload">Upload featured image</label><input id="tmFeaturedUpload" type="file" accept="image/png,image/jpeg,image/webp,image/gif" hidden><a class="tm-btn" href="blog-media.html">Open Media Library</a></div></div>
+ <div class="wide tm-seo-head"><h3>Search engine optimization</h3><p>Control how this post appears in search and social sharing.</p></div>
+ ${field('SEO title','seo_title',p.seo_title||'')}${textarea('Meta description','seo_description',p.seo_description||'',3)}
+ ${field('Canonical URL','canonical_url',p.canonical_url||'')}${field('Keywords (comma separated)','seo_keywords',Array.isArray(p.seo_keywords)?p.seo_keywords.join(', '):'')}
+ ${field('Image alt text','featured_image_alt',p.featured_image_alt||'')}${textarea('Tags (comma separated)','tags',Array.isArray(p.tags)?p.tags.join(', '):'',2)}
+ <div class="wide tm-check"><label><input type="checkbox" name="show_website" ${p.show_website!==false?'checked':''}> Visible on screenings4u.com when published</label></div>
+ <div class="wide tm-check"><label><input type="checkbox" name="featured" ${p.featured?'checked':''}> Featured article</label></div>${textarea('Internal change note','notes','',2)}`;
 }
 
 async function blogCreate(){
- return head('Create Blog Post','Create a new Screenings4u blog post as a draft.','<a class="tm-btn" href="blog.html">Back to Blog</a>')+`<section class="tm-card"><div class="tm-card-head"><div><h2>Blog Post</h2><p>Publishing writes directly to the production screenings4u_blog table consumed by screenings4u.com/blog.html.</p></div></div><div class="tm-card-body"><form id="f" class="tm-builder-form">${blogForm({author_name:'screenings4u'})}<div class="wide tm-actions"><button class="tm-btn primary" type="submit">Create Draft</button></div></form></div></section>`
+ return head('Create Blog Post','Write, format and save a draft before publishing.','<a class="tm-btn" href="blog.html">Back to Blog</a>')+`<section class="tm-card"><div class="tm-card-head"><div><h2>Blog Post</h2><p>Publishing writes directly to the production screenings4u_blog table consumed by screenings4u.com/blog.html.</p></div></div><div class="tm-card-body"><form id="f" class="tm-builder-form">${blogForm({author_name:'screenings4u'})}<div class="wide tm-actions"><button class="tm-btn primary" type="submit">Create Draft</button></div></form></div></section>`
 }
 
 async function blogPost(){
@@ -78,7 +100,12 @@ async function media(){
  return head('Blog Media','Upload and reuse images from the public testing-blog-images bucket.','<a class="tm-btn" href="blog.html">Back to Blog</a>')+`<div class="tm-grid"><section class="tm-card one-third"><div class="tm-card-head"><div><h2>Upload Image</h2><p>PNG, JPEG, WebP, or GIF up to 10 MB.</p></div></div><div class="tm-card-body"><form id="f"><div class="tm-field"><label for="file">Image File</label><input id="file" name="file" type="file" accept="image/png,image/jpeg,image/webp,image/gif" required></div><button class="tm-btn primary" type="submit">Upload Image</button></form><div id="uploadedUrl" class="tm-banner" hidden></div></div></section><section class="tm-card two-thirds"><div class="tm-card-head"><h2>Media Library</h2></div>${table(['Image','Uploaded',''],rows,'No blog media found.')}</section></div>`
 }
 
-const renders={website, 'website-pages':pages,'website-page-create':pageCreate,'website-page':pageRecord,'website-history':history,blog,'blog-create':blogCreate,'blog-post':blogPost,'blog-media':media};
+async function blogPreview(){
+ const d=await blogApi('get',{id:id()}),p=d.post;
+ const clean=window.DOMPurify?window.DOMPurify.sanitize(p.content_html||'',{USE_PROFILES:{html:true}}):esc(p.content_html||'');
+ return head('Preview Blog Post','Staff-only preview of the saved version. Unpublished articles are not publicly accessible.',`<a class="tm-btn" href="blog-post.html?id=${encodeURIComponent(p.id)}">Back to Editor</a>${p.status==='published'?`<a class="tm-btn" href="https://screenings4u.com/blog.html?slug=${encodeURIComponent(p.slug)}" target="_blank" rel="noopener">Public Article</a>`:''}`)+`<section class="tm-card tm-blog-preview"><div class="tm-card-body"><div class="tm-preview-note">${badge(p.status)} · Draft preview in the management portal</div>${p.featured_image_url?`<img class="tm-preview-cover" alt="${esc(p.featured_image_alt||p.title)}" src="${esc(p.featured_image_url)}">`:''}<p class="tm-preview-category">${esc(p.category||'Insights')}</p><h1>${esc(p.title)}</h1><p class="tm-preview-excerpt">${esc(p.excerpt||'')}</p><div class="tm-preview-body">${clean}</div></div></section>`;
+}
+const renders={website, 'website-pages':pages,'website-page-create':pageCreate,'website-page':pageRecord,'website-history':history,blog,'blog-create':blogCreate,'blog-post':blogPost,'blog-media':media,'blog-preview':blogPreview};
 
 function pagePayload(f){
  const x=fd(f);
@@ -89,7 +116,7 @@ function pagePayload(f){
 }
 function blogPayload(f){
  const x=fd(f);
- x.tags=lines(x.tags);
+ x.tags=lines(x.tags);x.seo_keywords=lines(x.seo_keywords);x.content_html=window.DOMPurify?window.DOMPurify.sanitize(document.querySelector('#tmRichEditor')?.innerHTML||'',{USE_PROFILES:{html:true}}):'';
  x.show_website=!!f.querySelector('[name="show_website"]')?.checked;
  x.show_customer_portal=!!f.querySelector('[name="show_customer_portal"]')?.checked;
  x.show_employer_portal=!!f.querySelector('[name="show_employer_portal"]')?.checked;
@@ -98,10 +125,31 @@ function blogPayload(f){
 }
 function file64(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(file)})}
 function bindSearch(){const s=$('#tmSearch'),f=$('#tmFilter');const run=()=>{const q=(s?.value||'').toLowerCase(),v=f?.value||'';document.querySelectorAll('[data-search]').forEach(el=>el.hidden=!!((q&&!el.dataset.search.includes(q))||(v&&el.dataset.status!==v)))};s?.addEventListener('input',run);f?.addEventListener('change',run)}
+function setupRichEditor(){
+ const editor=$('#tmRichEditor'),toolbar=$('#tmEditorToolbar');if(!editor||!toolbar)return;
+ editor.innerHTML=window.DOMPurify?window.DOMPurify.sanitize(editor.dataset.initial||'',{USE_PROFILES:{html:true}}):'';
+ const recount=()=>{$('#tmWordCount').textContent=(editor.innerText.trim().match(/\S+/g)||[]).length+' words'};recount();editor.addEventListener('input',recount);
+ const run=(cmd,v)=>{editor.focus();document.execCommand(cmd,false,v||null);recount()};
+ toolbar.addEventListener('mousedown',e=>{if(e.target.closest('button'))e.preventDefault()});
+ toolbar.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;const cmd=b.dataset.cmd;if(cmd){run(cmd);return}
+ const insert=b.dataset.insert;if(!insert)return;
+ if(insert==='clear'){run('removeFormat');return}
+ if(['divider','spacer'].includes(insert)){run('insertHTML',insert==='divider'?'<hr>':'<div class="article-spacer" style="height:32px" aria-hidden="true"></div>');return}
+ const url=prompt('Enter a complete https:// URL');if(!url||!/^https:\/\/[^\s]+$/i.test(url)){toast('Use a valid HTTPS URL.',true);return}
+ if(insert==='link'){run('createLink',url)}else if(insert==='button'){const label=prompt('Button text')||'Learn more';run('insertHTML',`<a class="article-button" href="${esc(url)}">${esc(label)}</a>`)}else if(insert==='image'){run('insertHTML',`<img src="${esc(url)}" alt="" loading="lazy">`)}
+ });
+ toolbar.querySelector('[data-format="block"]').onchange=e=>run('formatBlock',e.target.value);
+ toolbar.querySelector('[data-format="font"]').onchange=e=>run('fontName',e.target.value);
+ toolbar.querySelector('[data-color]').onchange=e=>run(e.target.dataset.color,e.target.value);
+ $('#title')?.addEventListener('input',e=>{const slug=$('#slug');if(!slug.dataset.edited)slug.value=e.target.value.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')});
+ $('#slug')?.addEventListener('input',e=>{e.target.dataset.edited='true'});
+ $('#tmFeaturedUpload')?.addEventListener('change',async e=>{const file=e.target.files?.[0];if(!file)return;try{const r=await blogApi('upload_image',{file:{name:file.name,mime_type:file.type,base64:await file64(file)}});$('#featured_image_url').value=r.url;toast('Image uploaded and selected. Save the post to keep this change.')}catch(err){toast(err.message||String(err),true)}});
+}
 function bind(page){
  if(['website-pages','blog'].includes(page))bindSearch();
  if(page==='website-page-create')$('#f').onsubmit=async e=>{e.preventDefault();try{const r=await websiteApi('create_page',pagePayload(e.target));toast('Website page record created.');location.href='website-page.html?id='+encodeURIComponent(r.page.id)}catch(err){toast(err.message||String(err),true)}};
  if(page==='website-page')$('#f').onsubmit=async e=>{e.preventDefault();try{await websiteApi('update_page',{id:id(),...pagePayload(e.target)});toast('Website page record saved.');location.reload()}catch(err){toast(err.message||String(err),true)}};
+ if(['blog-create','blog-post'].includes(page))setupRichEditor();
  if(page==='blog-create')$('#f').onsubmit=async e=>{e.preventDefault();try{const r=await blogApi('create',blogPayload(e.target));toast('Blog draft created.');location.href='blog-post.html?id='+encodeURIComponent(r.post.id)}catch(err){toast(err.message||String(err),true)}};
  if(page==='blog-post'){
    const f=$('#f');f.onsubmit=async e=>{e.preventDefault();try{await blogApi('update',{id:id(),...blogPayload(f)});toast('Blog post saved.');location.reload()}catch(err){toast(err.message||String(err),true)}};
