@@ -199,3 +199,7 @@ body[data-page="order-history"] #fulfillmentForm{row-gap:12px}
 body[data-page="order-history"] #fulfillmentForm .tm-field textarea{height:84px;min-height:84px;max-height:180px}
 body[data-page="order-history"] #fulfillmentForm .tm-actions{margin-top:0;justify-content:flex-start}
 body[data-page="order-history"] #fulfillmentForm .tm-btn{min-height:40px}
+
+/* Mobile portal accessibility and responsiveness */
+@media(max-width:900px){.content,.main-content,main{max-width:100%;min-width:0}.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch}input,select,textarea{max-width:100%}}
+@media(max-width:640px){.content,.main-content{padding:16px!important}.panel-head{flex-wrap:wrap;gap:12px}.grid,.form-grid{grid-template-columns:1fr!important}.toolbar,.filters,.actions{flex-wrap:wrap}.hero{padding:20px!important}.table-wrap{width:100%}button,.btn,input,select{font-size:16px}}
