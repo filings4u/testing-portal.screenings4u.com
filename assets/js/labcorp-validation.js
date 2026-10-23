@@ -2,7 +2,7 @@
 const $=s=>document.querySelector(s);
 const esc=v=>window.TestingShell.esc(String(v??''));
 const panels=[
- ['956811','DOT Urine'],['957129','Non-DOT Urine'],['172043','Instant Test'],['791030','5 Panel Urine Expanded'],['793394','EtG + 10 Panel Urine'],['792642','4 Panel Urine'],['721950','4 Panel Urine Expanded'],['789162','9 Panel Urine'],['793247','9 Panel Urine Expanded'],['728374','12 Panel Urine'],['728372','18 Panel Urine'],
+ ['4549490002','DOT Urine'],['4552950001','Non-DOT Urine'],['172043','Instant Test'],['791030','5 Panel Urine Expanded'],['793394','EtG + 10 Panel Urine'],['792642','4 Panel Urine'],['721950','4 Panel Urine Expanded'],['789162','9 Panel Urine'],['793247','9 Panel Urine Expanded'],['728374','12 Panel Urine'],['728372','18 Panel Urine'],
  ['806698','5 Panel Hair'],['806705','5 Panel Hair Expanded'],['804445','EtG Alcohol Hair'],['816062','7 Panel Hair'],['816212','9 Panel Hair'],['816000','12 Panel Hair'],['816389','14 Panel Hair']
 ];
 const api=async(action,extra={})=>{
@@ -22,9 +22,9 @@ function view(){
 }
 async function checkAccount(){
  const button=$('#accountDetails');if(state.busy)return;
- state.busy=true;button.disabled=true;status('Requesting Labcorp certification account 101101 details…');
+ state.busy=true;button.disabled=true;status('Requesting Labcorp certification account 393166 details…');
  try{
-  const res=await api('get_account_details',{account_number:'101101',account_location_code:'101101'});
+  const res=await api('get_account_details',{account_number:'393166',account_location_code:'393166'});
   const xml=String(res.raw_xml||'');
   const details=/<(?:[\w.-]+:)?getAccountDetailsReturn(?:\s|>)/i.test(xml);
   const hasFault=/<(?:[\w.-]+:)?Fault(?:\s|>)/i.test(xml);
