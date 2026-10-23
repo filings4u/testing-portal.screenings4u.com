@@ -29,6 +29,12 @@ Deno.serve(async(req:Request)=>{
   }
   const endpoint=Deno.env.get("LABCORP_OTS_ENDPOINT")||"https://services-cert.labcorpsolutions.com/webservice/services/LabcorpOTS";
   const user=Deno.env.get("LABCORP_OTS_USER")||"",password=Deno.env.get("LABCORP_OTS_PASSWORD")||"";
+  // Pre-check configuration before claiming a draft to avoid stranded orders.
+  let certUrl:URL;
+  try{certUrl=new URL(endpoint)}catch{err("Labcorp certification endpoint is not a valid URL",503)}
+  if(certUrl!.protocol!=="https:"||certUrl!.hostname!=="services-cert.labcorpsolutions.com")err("Labcorp certification endpoint is not approved",503);
+  if(!user||!password)err("Labcorp certification credentials are not configured",503);
+  if(body.validate_only===true)return J({ok:true,eligible:true,mode,labcorp_order_id:id,will_submit:false});
   const claim=await db.from("testing_labcorp_orders").update({status:"submitting",client_registration_id:d.client_registration_id,updated_at:new Date().toISOString()}).eq("id",id).eq("status","draft").is("labcorp_registration_number",null).select("id").maybeSingle();if(claim.error)throw claim.error;if(!claim.data)err("Draft was already claimed");claimed=true;
   const result=await registerDonor(d,{endpoint,user,password});
   const timestamp=result.registrationDateTime&&Number.isFinite(Date.parse(result.registrationDateTime))?new Date(result.registrationDateTime).toISOString():new Date().toISOString();
