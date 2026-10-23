@@ -30,16 +30,16 @@ async function create(){
  const [d,catalog]=await Promise.all([api('options'),api('catalog_review')]);
  const orders=[['','No linked commercial order'],...(d.orders||[]).map(o=>[o.id,`${o.order_number} — ${o.customer_email||'Customer'}`])];
  const cases=[['','No linked Testing case'],...(d.cases||[]).map(c=>[c.id,`${c.case_number} — ${c.donor_name||c.customer_name||'Donor'}`])];
- const assigned=(catalog.assigned_panels||[]).filter(p=>p.account_number==='101101'&&p.account_location_code==='101101');
- const allowed=assigned.filter(p=>p.panel_id!=='780110'&&/getPanelDetails returned|certification getPanelDetails returned/i.test(p.notes||''));
- const panelOptions=allowed.map(p=>[p.panel_id,p.panel_id+(p.panel_id==='0191150006'?' — Account default':'')]);
+ const assigned=(catalog.assigned_panels||[]).filter(p=>['01109090','393166','576898','576899'].includes(p.account_number)&&p.account_location_code===p.account_number);
+ const allowed=assigned;
+ const panelOptions=allowed.map(p=>[p.panel_id,p.panel_id+(p.panel_id==='4552950001'?' — Account default':'')]);
  if(!panelOptions.length)throw new Error('No reviewed certification panels are available. Check Labcorp Catalog Review.');
- return head('Create Labcorp Order','Prepare a certification donor-registration draft for account 101101. Saving the draft does not contact Labcorp.','<a class="tm-btn" href="labcorp-orders.html">Back to Labcorp Orders</a><a class="tm-btn" href="labcorp-catalog-review.html">Catalog Review</a>')+
- `<div class="tm-banner warn"><strong>Certification draft only · account 101101 / location 101101</strong><div>Only the nine assigned panels that returned details can be selected here. Panel 780110 returned no analyte details. No registration will be submitted when saving this form; product mappings remain pending.</div></div>`+
+ return head('Create Labcorp Order','Prepare a certification donor-registration draft for assigned DEV account. Saving the draft does not contact Labcorp.','<a class="tm-btn" href="labcorp-orders.html">Back to Labcorp Orders</a><a class="tm-btn" href="labcorp-catalog-review.html">Catalog Review</a>')+
+ `<div class="tm-banner warn"><strong>Certification draft only · assigned DEV accounts</strong><div>Only the nine assigned panels that returned details can be selected here. Panel 780110 returned no analyte details. No registration will be submitted when saving this form; product mappings remain pending.</div></div>`+
  `<section class="tm-card"><div class="tm-card-head"><div><h2>Labcorp Registration Draft</h2><p>Use certification test-donor information only. Commercial billing stays on the linked Testing Order.</p></div></div><div class="tm-card-body"><form id="f" class="tm-builder-form">`+
  select('Commercial Testing Order','order_id',orders,orderId())+select('Testing Case','testing_case_id',cases,caseId())+
- field('Labcorp Account Number','account_number','101101','text','readonly required')+field('Account Location Code','account_location_code','101101','text','readonly required')+
- select('Certification Panel','cert_panel',panelOptions,'0191150006')+
+ select('Labcorp DEV Account','account_number',[['01109090','Hair'],['393166','DOT'],['576898','Instant'],['576899','Non-DOT']].map(([v,n])=>[v,v+' — '+n]),'576899')+field('Labcorp Location Code','account_location_code','576899','text','required')+
+ select('Certification Panel','cert_panel',panelOptions,'4552950001')+
  field('Donor First Name','donor_first_name','','text','required maxlength="80"')+field('Middle Initial','donor_middle_initial','','text','maxlength="1"')+field('Donor Last Name','donor_last_name','','text','required maxlength="80"')+
  field('Donor Email','donor_email','','email')+field('Donor Phone','donor_phone')+field('Employee / Donor ID','donor_id')+
  select('State of Residence','donor_state_of_residence',STATES,'')+
@@ -65,8 +65,8 @@ async function registration(){
  const missing=[['Account number',r.account_number],['Account location code',r.account_location_code],['Donor first name',r.donor_first_name],['Donor last name',r.donor_last_name],['Reason for test',r.donor_reason_for_test],['State of residence',r.donor_state_of_residence],['Registration expiration',r.registration_expiration_at]].filter(x=>!x[1]).map(x=>x[0]);
  if(!panels.length)missing.push('Labcorp panel selection');
  const unapproved=panels.filter(p=>!assigned.some(x=>x.panel_id===p&&x.mapping_status==='approved'&&x.enabled_for_submission===true));
- const certAccount=r.account_number==='101101'&&r.account_location_code==='101101';
- if(!certAccount)missing.push('Certification account/location must both be 101101');
+ const certAccount=['01109090','393166','576898','576899'].includes(r.account_number)&&r.account_location_code===r.account_number;
+ if(!certAccount)missing.push('Selected DEV account and location must match');
  const registered=!!r.labcorp_registration_number;
  const canSubmit=!registered&&d.integration?.configured&&!missing.length&&!unapproved.length&&certAccount;
  const problems=[...missing,...unapproved.map(p=>'Panel '+p+' is not approved for certification submission')];
@@ -99,7 +99,7 @@ function formPayload(f){const x=fd(f);if('panel_ids'in x)x.panel_ids=lines(x.pan
 function bind(page){
  if(page==='labcorp-orders')bindSearch();
  if(page==='labcorp-order-create'||page==='labcorp-order')bindSplit($('#f'));
- if(page==='labcorp-order-create')$('#f').onsubmit=async e=>{e.preventDefault();const button=$('#saveDraft');if(button?.disabled)return;try{const payload=formPayload(e.target);payload.panel_ids=[payload.cert_panel];delete payload.cert_panel;payload.donor_state_of_residence=String(payload.donor_state_of_residence||'').trim().toUpperCase();if(payload.account_number!=='101101'||payload.account_location_code!=='101101')throw new Error('Certification account and location must be 101101.');button.disabled=true;button.textContent='Saving Draft…';const r=await api('create',payload);toast('Certification draft saved. No Labcorp submission was made.');window.location.assign('labcorp-orders.html')}catch(err){toast(err.message||String(err),true);button.disabled=false;button.textContent='Save Certification Draft'}};
+ if(page==='labcorp-order-create')$('#f').onsubmit=async e=>{e.preventDefault();const button=$('#saveDraft');if(button?.disabled)return;try{const payload=formPayload(e.target);payload.panel_ids=[payload.cert_panel];delete payload.cert_panel;payload.donor_state_of_residence=String(payload.donor_state_of_residence||'').trim().toUpperCase();if(!['01109090','393166','576898','576899'].includes(payload.account_number)||payload.account_location_code!==payload.account_number)throw new Error('Select one of the assigned Labcorp DEV accounts.');button.disabled=true;button.textContent='Saving Draft…';const r=await api('create',payload);toast('Certification draft saved. No Labcorp submission was made.');window.location.assign('labcorp-orders.html')}catch(err){toast(err.message||String(err),true);button.disabled=false;button.textContent='Save Certification Draft'}};
  if(page==='labcorp-order')$('#createDonorPass')?.addEventListener('click',async e=>{const btn=e.currentTarget;btn.disabled=true;btn.textContent='Opening Donor Pass…';try{const response=await window.TestingAuth.invoke(window.TESTING_PORTAL_CONFIG.donorPassFunction,{action:'create_from_labcorp',labcorp_order_id:id()});if(!response.donor_pass?.id)throw new Error('Donor pass was not returned.');location.assign('donor-pass.html?id='+encodeURIComponent(response.donor_pass.id))}catch(err){toast(err.message||String(err),true);btn.disabled=false;btn.textContent='Create / Open Donor Pass'}});
  if(page==='labcorp-order')$('#f').onsubmit=async e=>{e.preventDefault();try{await api('update',{id:id(),...formPayload(e.target)});toast('Labcorp order saved.');location.reload()}catch(err){toast(err.message||String(err),true)}};
  if(page==='labcorp-order-registration'){
