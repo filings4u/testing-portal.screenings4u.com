@@ -2,8 +2,19 @@
 const $=s=>document.querySelector(s);
 const esc=v=>window.TestingShell.esc(String(v??''));
 const panels=[
- ['4549490002','DOT Urine'],['4552950001','Non-DOT Urine'],['172043','Instant Test'],['791030','5 Panel Urine Expanded'],['793394','EtG + 10 Panel Urine'],['792642','4 Panel Urine'],['721950','4 Panel Urine Expanded'],['789162','9 Panel Urine'],['793247','9 Panel Urine Expanded'],['728374','12 Panel Urine'],['728372','18 Panel Urine'],
- ['806698','5 Panel Hair'],['806705','5 Panel Hair Expanded'],['804445','EtG Alcohol Hair'],['816062','7 Panel Hair'],['816212','9 Panel Hair'],['816000','12 Panel Hair'],['816389','14 Panel Hair']
+ ["806698","Hair · 01109090"],
+ ["4549490002","DOT · 393166"],
+ ["PCA-10X3S-LC","Instant · 576898"],
+ ["4552950001","Non-DOT · 576899"],
+ ["4552950002","Non-DOT · 576899"],
+ ["4552950003","Non-DOT · 576899"],
+ ["4552950004","Non-DOT · 576899"],
+ ["4552950005","Non-DOT · 576899"],
+ ["4552950006","Non-DOT · 576899"],
+ ["4552950007","Non-DOT · 576899"],
+ ["4552950008","Non-DOT · 576899"],
+ ["4552950009","Non-DOT · 576899"],
+ ["4552950010","Non-DOT · 576899"]
 ];
 const api=async(action,extra={})=>{
  const {data,error}=await window.testingSupabase.functions.invoke(window.TESTING_PORTAL_CONFIG.labcorpOrderFunction,{body:{action,...extra}});
@@ -18,7 +29,7 @@ function view(){
  <section class="tm-card lc-rotation"><div class="tm-card-head"><div><h2>Certification Password Rotation</h2><p>Use the existing signed-in portal session. Passwords stay in Supabase Secrets.</p></div></div><div class="tm-card-body"><div class="tm-banner warn">One-time operation. Do not run twice after success.</div><div class="lc-control-row"><button class="tm-btn primary" id="rotatePassword">Change OTS Password Once</button><span id="rotateResult" aria-live="polite">Not attempted</span></div></div></section>
  <section class="tm-card lc-panels"><div class="tm-card-head"><div><h2>Panel Validation</h2><p>Validate a single code or each supplied code against Labcorp's certification SOAP service. Existing mappings stay unapproved.</p></div></div><div class="tm-card-body"><div class="lc-panel-controls"><div class="tm-field"><label for="panelCode">Panel ID</label><input id="panelCode" value="956811" inputmode="numeric" maxlength="20"></div><button class="tm-btn primary" id="single">Validate Panel</button><button class="tm-btn" id="all">Validate All 18 Panels</button></div><div id="runStatus" aria-live="polite"></div></div><div class="tm-table-wrap"><table class="tm-table"><thead><tr><th>Panel ID</th><th>Product / Test</th><th>Validation</th><th>Action</th></tr></thead><tbody id="panelRows"></tbody></table></div></section>
  <section class="tm-card lc-response"><div class="tm-card-head"><h2>Certification Response</h2></div><div class="tm-card-body"><p id="responseIntro">Run a lookup to see its outcome. SOAP responses may include laboratory-specific details; review before sharing.</p><pre id="responseText" class="lc-response-text"></pre></div></section>`;
- renderRows();$('#accountDetails').onclick=checkAccount;$('#connection').onclick=()=>run('956811',true);$('#single').onclick=()=>run($('#panelCode').value.trim());$('#all').onclick=runAll;$('#rotatePassword').onclick=rotatePassword;
+ renderRows();$('#accountDetails').onclick=checkAccount;$('#connection').onclick=()=>run('4549490002',true);$('#single').onclick=()=>run($('#panelCode').value.trim());$('#all').onclick=runAll;$('#rotatePassword').onclick=rotatePassword;
 }
 async function checkAccount(){
  const button=$('#accountDetails');if(state.busy)return;
@@ -53,7 +64,7 @@ function renderRows(){const target=$('#panelRows');target.innerHTML=panels.map((
 function status(text){$('#runStatus').textContent=text}
 async function lookup(code){try{const res=await api('get_panel',{panel_id:code});if(!res.raw_xml)throw Error('Labcorp returned no SOAP response content.');state.results.set(code,{ok:true,text:res.raw_xml});return true}catch(e){state.results.set(code,{ok:false,text:e?.message||String(e)});return false}}
 function display(code){const r=state.results.get(code);$('#responseIntro').textContent=`Panel ${code}: ${r?.ok?'SOAP response received':'Lookup failed'}. A returned response must still be reviewed to verify panel properties.`;$('#responseText').textContent=r?.text||'';}
-async function run(code,connection=false){if(state.busy)return;if(!/^\d{5,20}$/.test(code)){status('Enter a valid numeric Labcorp panel ID.');return}state.busy=true;renderRows();status(`Checking Labcorp panel ${code}…`);try{const ok=await lookup(code);display(code);status(ok?`Panel ${code}: response received; review its contents before approval.`:`Panel ${code}: lookup failed. See response below.`);if(connection)$('#connectionResult').textContent=ok?'Connection responded':'Connection test failed';}finally{state.busy=false;renderRows()}}
+async function run(code,connection=false){if(state.busy)return;if(!/^[A-Z0-9-]{5,30}$/i.test(code)){status('Enter a valid numeric Labcorp panel ID.');return}state.busy=true;renderRows();status(`Checking Labcorp panel ${code}…`);try{const ok=await lookup(code);display(code);status(ok?`Panel ${code}: response received; review its contents before approval.`:`Panel ${code}: lookup failed. See response below.`);if(connection)$('#connectionResult').textContent=ok?'Connection responded':'Connection test failed';}finally{state.busy=false;renderRows()}}
 async function runAll(){if(state.busy)return;state.busy=true;renderRows();let success=0,checked=0;try{for(let i=0;i<panels.length;i++){const code=panels[i][0];status(`Checking ${i+1} of ${panels.length}: ${code}`);const ok=await lookup(code);checked++;if(ok)success++;else if(/password expired|authentication failed|invalid credentials|unauthorized/i.test(state.results.get(code)?.text||'')){status(`Stopped at panel ${code}: Labcorp authentication failed. Resolve credentials before trying again.`);display(code);return;}renderRows()}status(`Completed ${checked} lookups: ${success} responses, ${checked-success} errors. Review every returned panel before approval.`);display(panels.at(-1)[0]);}finally{state.busy=false;renderRows()}}
 window.TestingPages=Object.freeze({init:async()=>view()});
 })();
