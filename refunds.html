@@ -39,7 +39,7 @@ body[data-page="refunds"] .rf-modal-actions{display:flex;justify-content:flex-en
 body[data-page="refunds"] .rf-modal-actions .tm-btn{min-width:112px;min-height:42px}
 body[data-page="refunds"] .rf-modal-actions .tm-btn.danger{background:#b43328;color:#fff;border-color:#b43328}
 </style><title>Refund Management | Screenings4u Testing</title></head><body data-page="refunds"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="assets/js/config.js"></script><script src="assets/js/management-portal-guard.js"></script><script src="assets/js/auth.js"></script><script src="assets/js/security.js"></script><script src="assets/js/shell.js?v=20261026-refunds"></script><script>(()=>{'use strict';
-const $=s=>document.querySelector(s),esc=v=>window.TestingShell.esc(v),money=c=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Math.round(Number(c||0))/100),cents=v=>{const s=String(v).trim();if(!/^(?:\\d+)(?:\\.\\d{0,2})?$/.test(s))return NaN;const [a,b='']=s.split('.');return Number(a)*100+Number(b.padEnd(2,'0'))},dollars=c=>(c/100).toFixed(2);
+const $=s=>document.querySelector(s),esc=v=>window.TestingShell.esc(v),money=c=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Math.round(Number(c||0))/100),cents=v=>{const s=String(v).trim();if(!/^(?:\d+)(?:\.\d{0,2})?$/.test(s))return NaN;const [a,b='']=s.split('.');return Number(a)*100+Number(b.padEnd(2,'0'))},dollars=c=>(c/100).toFixed(2);
 let orders=[],order=null,items=[],refunds=[],selected=new Map(),state={gross:0,fees:0,net:0,available:0},busy=false;
 const cfg=window.TESTING_PORTAL_CONFIG;
 const invoke=(action,x={})=>window.TestingAuth.invoke(cfg.orderFunction,{action,...x});
