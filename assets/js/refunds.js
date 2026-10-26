@@ -1,5 +1,5 @@
 (()=>{'use strict';
-const $=s=>document.querySelector(s),esc=v=>window.TestingShell.esc(v),money=c=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Math.round(Number(c||0))/100),cents=v=>{const s=String(v).trim();if(!/^(?:\\d+)(?:\\.\\d{0,2})?$/.test(s))return NaN;const [a,b='']=s.split('.');return Number(a)*100+Number(b.padEnd(2,'0'))},dollars=c=>(c/100).toFixed(2);
+const $=s=>document.querySelector(s),esc=v=>window.TestingShell.esc(v),money=c=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Math.round(Number(c||0))/100),cents=v=>{const s=String(v).trim();if(!/^(?:\d+)(?:\.\d{0,2})?$/.test(s))return NaN;const [a,b='']=s.split('.');return Number(a)*100+Number(b.padEnd(2,'0'))},dollars=c=>(c/100).toFixed(2);
 let orders=[],order=null,items=[],refunds=[],selected=new Map(),state={gross:0,fees:0,net:0,available:0},busy=false;
 const cfg=window.TESTING_PORTAL_CONFIG;
 const invoke=(action,x={})=>window.TestingAuth.invoke(cfg.orderFunction,{action,...x});
