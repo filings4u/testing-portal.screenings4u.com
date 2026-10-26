@@ -7,6 +7,7 @@ const groups=[
 const children={
  'testing-operations.html':['testing-case.html','testing-case-schedule.html','testing-donor-pass.html','testing-collection.html','testing-lab-routing.html','testing-mro-review.html','testing-result-release.html','testing-case-events.html'],
  'cases.html':['case-create.html','case.html','case-customer.html','case-documents.html','case-history.html'],
+ 'refunds.html':['refund-create.html','refund.html'],
  'orders.html':['order-create.html','order.html','order-items.html','order-customer.html','order-payment.html','order-cases.html'],
  'labcorp-orders.html':['labcorp-order-create.html','labcorp-order.html','labcorp-order-registration.html','labcorp-order-sites.html','labcorp-order-results.html','labcorp-order-events.html'],
  'results.html':['result.html','result-documents.html','result-upload.html','result-history.html'],
