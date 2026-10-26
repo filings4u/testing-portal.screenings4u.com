@@ -24,6 +24,20 @@ body[data-page="refunds"] .rf-help{font-size:12px}
 @media(max-width:1180px){body[data-page="refunds"] .rf-layout{grid-template-columns:1fr}body[data-page="refunds"] aside.rf-stack{position:static;display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:760px){body[data-page="refunds"] .tm-page{padding:20px 14px 40px}body[data-page="refunds"] aside.rf-stack{grid-template-columns:1fr}body[data-page="refunds"] .rf-fields{grid-template-columns:1fr}body[data-page="refunds"] .rf-field.wide{grid-column:auto}body[data-page="refunds"] .rf-item{grid-template-columns:minmax(0,1fr) 60px 100px}}
 @media(max-width:480px){body[data-page="refunds"] .rf-item{grid-template-columns:1fr 1fr}body[data-page="refunds"] .rf-item>div:first-child{grid-column:1/-1}body[data-page="refunds"] .rf-toolbar input{min-width:100%}}
+
+/* Branded confirmation dialogs */
+body[data-page="refunds"] .rf-modal-overlay{position:fixed;inset:0;z-index:20000;background:rgba(11,27,53,.65);display:flex;align-items:center;justify-content:center;padding:18px}
+body[data-page="refunds"] .rf-modal{width:min(460px,100%);background:#fff;border-radius:14px;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.27);border:1px solid #d9e3f0}
+body[data-page="refunds"] .rf-modal-header{background:#17365f;padding:16px 23px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+body[data-page="refunds"] .rf-modal-header img{max-width:175px;max-height:52px;object-fit:contain}
+body[data-page="refunds"] .rf-modal-header span{font-size:10px;letter-spacing:.10em;color:#f7f9fd;font-weight:800;text-align:right}
+body[data-page="refunds"] .rf-modal-content{padding:24px}
+body[data-page="refunds"] .rf-modal-icon{height:44px;width:44px;display:grid;place-items:center;border-radius:12px;background:#fff1e5;color:#ef6c0c;font-size:23px;margin-bottom:13px}
+body[data-page="refunds"] .rf-modal-content h2{font-size:20px;line-height:1.25;color:#17365f;margin:0 0 10px}
+body[data-page="refunds"] .rf-modal-content p{font-size:13px;line-height:1.7;color:#536780;margin:0}
+body[data-page="refunds"] .rf-modal-actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:10px;margin-top:25px}
+body[data-page="refunds"] .rf-modal-actions .tm-btn{min-width:112px;min-height:42px}
+body[data-page="refunds"] .rf-modal-actions .tm-btn.danger{background:#b43328;color:#fff;border-color:#b43328}
 </style><title>Refund Management | Screenings4u Testing</title></head><body data-page="refunds"><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="assets/js/config.js"></script><script src="assets/js/management-portal-guard.js"></script><script src="assets/js/auth.js"></script><script src="assets/js/security.js"></script><script src="assets/js/shell.js?v=20261026-refunds"></script><script>(()=>{'use strict';
 const $=s=>document.querySelector(s),esc=v=>window.TestingShell.esc(v),money=c=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(Math.round(Number(c||0))/100),cents=v=>{const n=Number(v);return Number.isFinite(n)?Math.round(n*100):NaN},dollars=c=>(c/100).toFixed(2);
 let orders=[],order=null,items=[],refunds=[],selected=new Map(),state={gross:0,fees:0,net:0,available:0},busy=false;
