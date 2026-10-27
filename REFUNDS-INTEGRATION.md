@@ -10,7 +10,7 @@ Deploy a protected refund-management API/Edge Function only after confirming the
 
 - `list`: paginated refund request and gateway refund history with status, amount, staff actor, timestamps.
 - `quote`: retrieve authoritative paid/captured balance from the gateway and refund ledger; validate selected items, taxes, discounts, prior refunds, pending refunds, payment disputes, currency, and amounts in integer cents; compute a policy-compliant gross/fee/net quote **on the server**.
-- `create_request`: persist a draft requiring reason, associated order, item allocations, restocking/re-service fee basis, customer communication, staff identity, and approval policy. Enforce role-based access server-side.
+- `create_request`: persist a draft requiring reason, associated order, item allocations, administrative/re-service fee basis, customer communication, staff identity, and approval policy. Enforce role-based access server-side.
 - `approve`: require separate authorized approver where policy requires it; reject self-approval where needed.
 - `execute`: require an approved quote and unique idempotency key; perform the gateway refund server-side and atomically record the transaction attempt. Prevent retries from issuing duplicate refunds, check remaining balance with a database lock, and handle partial gateway failures.
 - `reconcile`: verify finalized gateway refunds via authenticated webhooks and update refund/order statuses, ledger entries, and notifications. Never treat a client-side button click as proof of successful money movement.
