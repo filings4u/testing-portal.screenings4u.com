@@ -15,7 +15,7 @@ Deno.serve(async(req:Request)=>{
   if(!r)err("Labcorp draft not found",404);
   if(r.labcorp_registration_number)return J({ok:true,already_registered:true,registration_number:r.labcorp_registration_number});
   if(r.status!=="draft")err("Registration requires reconciliation before another attempt");
-  const d:Registration={...r,client_registration_id:r.client_registration_id||r.labcorp_order_number};
+  const d:Registration={...r,client_registration_id:r.client_registration_id||r.labcorp_order_number||r.order_item_id};
   const environment=Deno.env.get("LABCORP_OTS_ENVIRONMENT")==="prod"?"prod":"cert";
   if(environment==="prod"&&Deno.env.get("LABCORP_PROD_ENABLED")!=="true")err("Production submissions are not enabled",503);
   validate(d,environment);
@@ -30,7 +30,7 @@ Deno.serve(async(req:Request)=>{
    const service:any=item.data?.services,expected=service?.metadata?.labcorp_panel_ids;
    if(service?.metadata?.labcorp_fulfillment!==true||!Array.isArray(expected)||JSON.stringify(expected.map(String))!==JSON.stringify(r.panel_ids))err("Paid product-panel mapping mismatch");
   }
-  const endpoint=Deno.env.get("LABCORP_OTS_ENDPOINT")||"https://services-cert.labcorpsolutions.com/webservice/services/LabcorpOTS";
+  const endpoint=Deno.env.get("LABCORP_OTS_ENDPOINT")||(environment==="prod"?"https://services.labcorpsolutions.com/webservice/services/LabcorpOTS":"https://services-cert.labcorpsolutions.com/webservice/services/LabcorpOTS");
   const user=Deno.env.get("LABCORP_OTS_USER")||"",password=Deno.env.get("LABCORP_OTS_PASSWORD")||"";
   let remote:URL;
   try{remote=new URL(endpoint)}catch{err("Labcorp endpoint is not a valid URL",503)}
