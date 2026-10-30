@@ -206,3 +206,14 @@ body[data-page="order-history"] #fulfillmentForm .tm-btn{min-height:40px}
 
 /* Lab Account intake management table */
 body[data-page="intake-forms"] .tm-card{overflow:hidden}body[data-page="intake-forms"] .table-wrap{overflow-x:auto}body[data-page="intake-forms"] .table-wrap table{width:100%;min-width:1050px;border-collapse:separate;border-spacing:0}body[data-page="intake-forms"] .table-wrap th,body[data-page="intake-forms"] .table-wrap td{padding:15px 18px;text-align:left;vertical-align:middle;border-bottom:1px solid #e2e9f2;white-space:normal;line-height:1.5}body[data-page="intake-forms"] .table-wrap td:first-child{white-space:nowrap}body[data-page="intake-forms"] .table-wrap td:last-child{min-width:265px;white-space:nowrap}body[data-page="intake-forms"] .table-wrap td:last-child .tm-btn{display:inline-flex;margin:2px 4px 2px 0}body[data-page="intake-forms"] .table-wrap td:nth-child(3){min-width:220px}
+
+.tm-intake-modal-overlay{position:fixed;inset:0;background:rgba(8,27,51,.65);z-index:10000;display:flex;align-items:center;justify-content:center;padding:22px}
+.tm-intake-preview{background:#fff;border-radius:14px;width:min(1100px,100%);max-height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 22px 70px rgba(0,0,0,.3);color:#183653}
+.tm-intake-preview-head{display:flex;align-items:start;justify-content:space-between;gap:20px;padding:24px 28px;border-bottom:1px solid #dbe5ef}
+.tm-intake-preview-head h2{margin:6px 0;font-size:23px}.tm-intake-preview-head p{margin:0;color:#60758d}.tm-intake-preview-head small{color:#ed6c00;font-weight:800;letter-spacing:1px}
+.tm-intake-preview-body{padding:25px 28px;overflow:auto;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 20px;align-content:start}
+.tm-intake-preview-field{border:1px solid #dce5ef;background:#f8fafc;border-radius:10px;padding:12px 14px;min-width:0}
+.tm-intake-preview-field span{display:block;color:#58718a;text-transform:capitalize;font-size:12px;font-weight:700;margin-bottom:7px}
+.tm-intake-preview-field strong{display:block;font-weight:600;white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}
+.tm-intake-preview-foot{padding:16px 28px;border-top:1px solid #dbe5ef;display:flex;justify-content:flex-end}
+@media(max-width:700px){.tm-intake-preview-body{grid-template-columns:1fr}.tm-intake-preview-head{padding:18px}.tm-intake-preview-body{padding:18px}}
