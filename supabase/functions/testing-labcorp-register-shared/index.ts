@@ -15,11 +15,14 @@ Deno.serve(async(req:Request)=>{
   if(!r)err("Labcorp draft not found",404);
   if(r.labcorp_registration_number)return J({ok:true,already_registered:true,registration_number:r.labcorp_registration_number});
   if(r.status!=="draft")err("Registration requires reconciliation before another attempt");
-  const d:Registration={...r,client_registration_id:r.client_registration_id||r.labcorp_order_number};validate(d);
-  const mapping=await db.from("testing_labcorp_account_panels").select("panel_id,mapping_status,enabled_for_submission").eq("environment","cert").eq("account_number",r.account_number).eq("account_location_code",r.account_location_code).in("panel_id",r.panel_ids);if(mapping.error)throw mapping.error;
+  const d:Registration={...r,client_registration_id:r.client_registration_id||r.labcorp_order_number};
+  const environment=Deno.env.get("LABCORP_OTS_ENVIRONMENT")==="prod"?"prod":"cert";
+  if(environment==="prod"&&Deno.env.get("LABCORP_PROD_ENABLED")!=="true")err("Production submissions are not enabled",503);
+  validate(d,environment);
+  const mapping=await db.from("testing_labcorp_account_panels").select("panel_id,mapping_status,enabled_for_submission").eq("environment",environment).eq("account_number",r.account_number).eq("account_location_code",r.account_location_code).in("panel_id",r.panel_ids);if(mapping.error)throw mapping.error;
   if(!r.panel_ids.every((p:string)=>(mapping.data||[]).some((m:any)=>m.panel_id===p&&m.mapping_status==="approved"&&m.enabled_for_submission===true)))err("Panel approval required");
   if(mode==="automatic"){
-   if(Deno.env.get("LABCORP_AUTO_CERT_ENABLED")!=="true")err("Automatic certification submission disabled");
+   if(Deno.env.get(environment==="prod"?"LABCORP_AUTO_PROD_ENABLED":"LABCORP_AUTO_CERT_ENABLED")!=="true")err("Automatic Labcorp submission disabled");
    if(!r.order_id||!r.order_item_id)err("Paid order/item linkage required");
    const payment=await db.from("orders").select("payment_status,paid_at").eq("id",r.order_id).maybeSingle();if(payment.error)throw payment.error;
    if(payment.data?.payment_status!=="paid"||!payment.data?.paid_at)err("Payment not confirmed");
@@ -29,8 +32,14 @@ Deno.serve(async(req:Request)=>{
   }
   const endpoint=Deno.env.get("LABCORP_OTS_ENDPOINT")||"https://services-cert.labcorpsolutions.com/webservice/services/LabcorpOTS";
   const user=Deno.env.get("LABCORP_OTS_USER")||"",password=Deno.env.get("LABCORP_OTS_PASSWORD")||"";
+  let remote:URL;
+  try{remote=new URL(endpoint)}catch{err("Labcorp endpoint is not a valid URL",503)}
+  const expectedHost=environment==="prod"?"services.labcorpsolutions.com":"services-cert.labcorpsolutions.com";
+  if(remote!.protocol!=="https:"||remote!.hostname!==expectedHost||remote!.pathname!=="/webservice/services/LabcorpOTS"||remote!.search||remote!.hash||remote!.username||remote!.password)err("Labcorp endpoint does not match selected environment",503);
+  if(!user||!password)err("Labcorp credentials are not configured",503);
+  if(body.validate_only===true)return J({ok:true,eligible:true,mode,labcorp_order_id:id,will_submit:false});
   const claim=await db.from("testing_labcorp_orders").update({status:"submitting",client_registration_id:d.client_registration_id,updated_at:new Date().toISOString()}).eq("id",id).eq("status","draft").is("labcorp_registration_number",null).select("id").maybeSingle();if(claim.error)throw claim.error;if(!claim.data)err("Draft was already claimed");claimed=true;
-  const result=await registerDonor(d,{endpoint,user,password});
+  const result=await registerDonor(d,{endpoint,user,password,environment});
   const timestamp=result.registrationDateTime&&Number.isFinite(Date.parse(result.registrationDateTime))?new Date(result.registrationDateTime).toISOString():new Date().toISOString();
   const saved=await db.from("testing_labcorp_orders").update({status:"registered",labcorp_registration_number:result.registrationNumber,registration_created_at:timestamp,submitted_at:new Date().toISOString(),last_synced_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq("id",id).eq("status","submitting").select("id,labcorp_registration_number,status").single();if(saved.error)throw saved.error;
   return J({ok:true,labcorp_order:saved.data});
