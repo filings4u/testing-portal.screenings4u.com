@@ -41,8 +41,6 @@ async function caseHistory(){const d=await cases('get',{case_id:id()}),c=d.case;
 
 
 async function labIntakes(){
- const d=await api('enterprise-forms-management',{action:'submissions'});
- const all=(d.submissions||[]).filter(x=>['lab_account_intake_standalone','lab_account_intake'].includes(x.form_key));
  return head('Lab Account Intake Forms','Review, edit and archive intake submissions from the Lab Account portal.', '<a class="tm-btn" href="https://lab-account.screenings4u.com/dashboard.html" target="_blank" rel="noopener">Lab Account Portal</a>')+
  '<section class="tm-card"><div style="display:flex;gap:12px;flex-wrap:wrap;padding:18px"><input type="search" id="intakeSearch" placeholder="Search customer, company or reference" style="flex:1;min-width:230px;padding:12px;border:1px solid #ccd7e2;border-radius:8px"><select id="intakeStatus" style="padding:12px;border:1px solid #ccd7e2;border-radius:8px"><option value="">All statuses</option><option>pending</option><option>submitted</option><option>reviewing</option><option>completed</option><option>archived</option></select></div><div class="table-wrap"><table><thead><tr><th>Submission</th><th>Customer</th><th>Business</th><th>Status</th><th>Received</th><th>Actions</th></tr></thead><tbody id="intakeRows"></tbody></table></div></section>';
 }
