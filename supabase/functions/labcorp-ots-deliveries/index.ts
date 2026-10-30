@@ -65,7 +65,7 @@ Deno.serve(async req=>{
 
   // Notify operations only after both the order update and inbound event persist.
   // Alert emails intentionally contain no donor names, results, COC links or other PHI.
-  const recipient=(Deno.env.get("LABCORP_ALERT_EMAIL")||"").trim();
+  const recipient=(Deno.env.get("LABCORP_ALERT_EMAIL")||"labcorp@screenings4u.com").trim();
   const apiKey=Deno.env.get("RESEND_API_KEY")||"";
   if(recipient&&apiKey){
    const label=operation==="status"?"Status update":operation==="result"?"Lab result received":"COC document received";
