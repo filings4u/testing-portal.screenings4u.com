@@ -61,8 +61,8 @@ function bindIntakeList(){
  document.getElementById('intakeSearch').oninput=draw;document.getElementById('intakeStatus').onchange=draw;
  Promise.all([api('enterprise-forms-management',{action:'submissions'}),api('enterprise-forms-management',{action:'lab_account_purchases'})]).then(([d,p])=>{
  const forms=(d.submissions||[]).filter(x=>['lab_account_intake_standalone','lab_account_intake'].includes(x.form_key));
- const used=new Set(forms.map(x=>x.related_order_id).filter(Boolean));
- const purchases=(p.purchases||[]).filter(x=>!used.has(x.order_id)).map(x=>({id:x.id,purchase:true,submission_number:x.order_number,submitter_name:x.customer_email,submitter_email:x.customer_email,status:x.status,payload:x.intake_data,created_at:x.created_at}));
+ const used=new Set(forms.map(x=>x.related_order_id).filter(Boolean));const emails=new Set(forms.map(x=>String(x.submitter_email||'').toLowerCase()).filter(Boolean));
+ const purchases=(p.purchases||[]).filter(x=>!used.has(x.order_id)&&!emails.has(String(x.customer_email||'').toLowerCase())).map(x=>({id:x.id,purchase:true,submission_number:x.order_number,submitter_name:x.customer_email,submitter_email:x.customer_email,status:x.status,payload:x.intake_data,created_at:x.created_at}));
  source=[...forms,...purchases].sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));draw();
  }).catch(e=>{rows.innerHTML='<tr><td colspan="6">'+esc(e.message)+'</td></tr>'});
 }
