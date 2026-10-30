@@ -15,9 +15,9 @@ Deno.serve(async req=>{
   if(staff.data?.employment_status!=="active"||!access.data)return J({error:"Testing staff access required"},403);
   const b=await req.json().catch(()=>({})),action=String(b.action||"list");
   if(action==="list"){
-   const events=await db.from("testing_labcorp_order_events").select("id,labcorp_order_id,event_type,created_at,labcorp_status_id").eq("direction","inbound").order("created_at",{ascending:false}).limit(150);if(events.error)throw events.error;
-   const orders=await db.from("testing_labcorp_orders").select("id,labcorp_order_number,account_number,status,labcorp_status_id,labcorp_status_text,accession_number,resulted_at,last_synced_at,coc_storage_path,created_at").order("updated_at",{ascending:false}).limit(250);if(orders.error)throw orders.error;
-   return J({events:events.data||[],orders:orders.data||[]});
+   const events=await db.from("testing_labcorp_order_events").select("id,labcorp_order_id,event_type,created_at,labcorp_status_id,payload").eq("direction","inbound").order("created_at",{ascending:false}).limit(150);if(events.error)throw events.error;
+   const orders=await db.from("testing_labcorp_orders").select("id,labcorp_order_number,account_number,status,labcorp_status_id,labcorp_status_text,accession_number,result_summary,resulted_at,last_synced_at,coc_storage_path,created_at").order("updated_at",{ascending:false}).limit(250);if(orders.error)throw orders.error;
+   return J({events:(events.data||[]).map(e=>({id:e.id,labcorp_order_id:e.labcorp_order_id,event_type:e.event_type,created_at:e.created_at,labcorp_status_id:e.labcorp_status_id,classification:typeof e.payload?.classification==='string'?e.payload.classification:null})),orders:orders.data||[]});
   }
   if(action==="detail"){
    const id=String(b.id||"");if(!/^[0-9a-f-]{36}$/i.test(id))return J({error:"Invalid order"},400);
