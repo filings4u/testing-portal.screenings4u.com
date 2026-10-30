@@ -21,7 +21,7 @@ Deno.serve(async req=>{
   }
   if(action==="detail"){
    const id=String(b.id||"");if(!/^[0-9a-f-]{36}$/i.test(id))return J({error:"Invalid order"},400);
-   const [order,events]=await Promise.all([db.from("testing_labcorp_orders").select("id,labcorp_order_number,account_number,account_location_code,status,labcorp_status_id,labcorp_status_text,accession_number,specimen_id,result_summary,resulted_at,last_synced_at,coc_storage_bucket,coc_storage_path").eq("id",id).maybeSingle(),db.from("testing_labcorp_order_events").select("id,event_type,created_at,labcorp_status_id,payload").eq("labcorp_order_id",id).eq("direction","inbound").order("created_at",{ascending:false}).limit(100)]);
+   const [order,events]=await Promise.all([db.from("testing_labcorp_orders").select("id,testing_case_id,labcorp_order_number,account_number,account_location_code,status,labcorp_status_id,labcorp_status_text,accession_number,specimen_id,result_summary,resulted_at,last_synced_at,coc_storage_bucket,coc_storage_path").eq("id",id).maybeSingle(),db.from("testing_labcorp_order_events").select("id,event_type,created_at,labcorp_status_id,payload").eq("labcorp_order_id",id).eq("direction","inbound").order("created_at",{ascending:false}).limit(100)]);
    if(order.error||events.error)throw Error("Delivery lookup failed");if(!order.data)return J({error:"Order not found"},404);
    return J({order:order.data,events:(events.data||[]).map(e=>({...e,payload:{storage_paths:Array.isArray(e.payload?.storage_paths)?e.payload.storage_paths:[],status:e.payload?.status??null}}))});
   }
