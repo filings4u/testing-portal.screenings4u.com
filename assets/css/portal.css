@@ -217,3 +217,7 @@ body[data-page="intake-forms"] .tm-card{overflow:hidden}body[data-page="intake-f
 .tm-intake-preview-field strong{display:block;font-weight:600;white-space:pre-wrap;overflow-wrap:anywhere;font-size:14px}
 .tm-intake-preview-foot{padding:16px 28px;border-top:1px solid #dbe5ef;display:flex;justify-content:flex-end}
 @media(max-width:700px){.tm-intake-preview-body{grid-template-columns:1fr}.tm-intake-preview-head{padding:18px}.tm-intake-preview-body{padding:18px}}
+
+/* Responsive sidebar toggle: desktop collapse and mobile overlay */
+@media(min-width:761px){.tm-menu{display:inline-flex;width:38px}.tm-nav-hidden .tm-app{grid-template-columns:minmax(0,1fr)}.tm-nav-hidden .tm-sidebar{display:none}}
+@media(max-width:760px){.tm-menu-open .tm-sidebar{left:0}.tm-menu-open .tm-main:before{content:"";position:fixed;inset:0;background:rgba(15,32,55,.42);z-index:90;pointer-events:none}}
