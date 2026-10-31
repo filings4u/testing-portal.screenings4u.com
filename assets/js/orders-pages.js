@@ -16,7 +16,7 @@ function dialog(title,message,onConfirm){const b=document.createElement('div');b
 function orderNav(o){const x=encodeURIComponent(o.id);return `<div class="tm-subnav"><a class="tm-btn" href="order.html?id=${x}">Order Record</a><a class="tm-btn" href="order-items.html?id=${x}">Items</a><a class="tm-btn" href="order-customer.html?id=${x}">Customer</a><a class="tm-btn" href="order-payment.html?id=${x}">Payment</a><a class="tm-btn" href="order-cases.html?id=${x}">Cases</a><a class="tm-btn" href="labcorp-orders.html">Labcorp Orders</a></div>`}
 function bindSearch(){const input=$('#tmSearch'),filter=$('#tmFilter');const run=()=>{const q=(input?.value||'').toLowerCase(),f=filter?.value||'';document.querySelectorAll('[data-search]').forEach(el=>el.hidden=!!((q&&!el.dataset.search.includes(q))||(f&&el.dataset.status!==f)))};input?.addEventListener('input',run);filter?.addEventListener('change',run)}
 async function orders(){
- const d=await api('list'),groups=new Map(),focus=String(new URLSearchParams(location.search).get('customer')||'').trim().toLowerCase();
+ const d=await api('website_orders'),groups=new Map(),focus=String(new URLSearchParams(location.search).get('customer')||'').trim().toLowerCase();
  for(const o of d.orders||[]){
   const email=String(o.customer_email||'').trim().toLowerCase();
   const key=email||('unlinked:'+String(o.user_id||o.id));
