@@ -82,7 +82,7 @@ Deno.serve(async req=>{
     try{
      patch.email=requestedEmail;
      const updated=await db.from("user_profiles").update(patch).eq("id",id).select("*").single();if(updated.error)throw updated.error;
-     if(ids.length){const uq=await db.from("orders").update({customer_email:requestedEmail,updated_at:N()}).in("id",ids);if(uq.error)throw uq.error}
+     if(ids.length){const op:any={customer_email:requestedEmail,updated_at:N()};for(const [field,col] of [["first_name","customer_first_name"],["last_name","customer_last_name"],["phone","customer_phone"]])if(Object.prototype.hasOwnProperty.call(patch,field))op[col]=patch[field];const uq=await db.from("orders").update(op).in("id",ids);if(uq.error)throw uq.error}
      await log(db,id,user.id,"customer_profile_updated",C(b.notes)||null,{email_changed:true,orders_updated:ids.length});
      return J({profile:updated.data,orders_updated:ids.length});
     }catch(err){
