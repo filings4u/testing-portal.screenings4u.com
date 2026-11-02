@@ -48,7 +48,7 @@ async function checkAccount(){
 async function rotatePassword(){
  const button=$('#rotatePassword'),output=$('#rotateResult');
  if(button.disabled)return;
- if(!window.confirm('Call Labcorp changePassword exactly once? Confirm both old and new OTS secrets are saved.'))return;
+ if(!await window.TestingDialogs.confirm('Call Labcorp changePassword exactly once? Confirm both old and new OTS secrets are saved.',{title:'Confirm Labcorp password change',confirmText:'Change Password',danger:true}))return;
  button.disabled=true;output.textContent='Contacting Labcorp once…';
  try{
   const {data:session,error:sessionError}=await window.testingSupabase.auth.getSession();
