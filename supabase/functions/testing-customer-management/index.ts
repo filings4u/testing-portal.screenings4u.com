@@ -68,7 +68,7 @@ Deno.serve(async req=>{
    for(const f of ["first_name","last_name","display_name","phone"])if(Object.prototype.hasOwnProperty.call(b,f))patch[f]=C(b[f])||null;
    const requestedEmail=C(b.email).toLowerCase(),currentEmail=C(current.data.email).toLowerCase();
    if(Object.prototype.hasOwnProperty.call(b,"email")&&requestedEmail!==currentEmail){
-    if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(requestedEmail))return J({error:"Enter a valid customer email."},400);
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(requestedEmail))return J({error:"Enter a valid customer email."},400);
     const admin=await db.from("staff_business_access").select("id").eq("user_id",user.id).eq("business_unit_code","testing").eq("access_level","admin").eq("active",true).limit(1);
     if(admin.error)throw admin.error;if(!admin.data?.length)return J({error:"Administrator access is required to change the customer login email."},403);
     const existingAuth=await db.auth.admin.getUserById(id);if(existingAuth.error||!existingAuth.data.user)return J({error:"Customer authentication account not found."},409);
