@@ -239,3 +239,12 @@ body[data-page="intake-forms"] .tm-card{overflow:hidden}body[data-page="intake-f
 .tm-order-customer-card .tm-table td{vertical-align:middle}
 .tm-order-customer-card .tm-table td small{display:block;margin-top:4px}
 @media(max-width:760px){.tm-order-customer-card>.tm-card-body{padding:14px}.tm-order-customer-summary{grid-template-columns:minmax(0,1fr) minmax(95px,auto);gap:12px}.tm-order-customer-summary>div:nth-child(2){grid-column:1/-1}.tm-order-customer-card .tm-table{min-width:690px}}
+
+/* Order record: don't stretch the summary to the full height of the edit form. */
+.tm-order-record-grid{align-items:start;grid-template-columns:minmax(0,8fr) minmax(280px,4fr)}
+.tm-order-record-grid>.tm-card{min-width:0;align-self:start}
+.tm-order-record-grid>.two-thirds,.tm-order-record-grid>.one-third{grid-column:auto}
+.tm-order-record-grid .tm-card-body{min-width:0}
+.tm-order-record-grid .tm-builder-form{align-content:start}
+.tm-order-record-grid .tm-builder-form textarea{min-height:110px;resize:vertical}
+@media(max-width:1100px){.tm-order-record-grid{grid-template-columns:minmax(0,1fr)}.tm-order-record-grid>.two-thirds,.tm-order-record-grid>.one-third{grid-column:1}}
