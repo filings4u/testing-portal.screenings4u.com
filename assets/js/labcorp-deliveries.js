@@ -28,7 +28,7 @@ async function detail(){
  '<section class="tm-card"><div class="tm-card-head"><h2>Chain of Custody Documents</h2></div><div class="tm-card-body">'+(paths.length?paths.map((p,i)=>'<button class="tm-btn" data-path="'+esc(p)+'">Open Secure COC '+(i+1)+'</button>').join(' '):'No COC documents received.')+'</div></section>'+
  '<section class="tm-card"><div class="tm-card-head"><h2>Inbound History</h2></div>'+table(['Received','Type','Status'],d.events.map(e=>'<tr><td>'+esc(dt(e.created_at))+'</td><td>'+esc(e.event_type)+'</td><td>'+esc(e.labcorp_status_id??'—')+'</td></tr>').join('')||'<tr><td colspan="3" class="tm-empty">No incoming events yet.</td></tr>')+'</section>';
  $('#refresh').onclick=detail;
- document.querySelectorAll('[data-path]').forEach(b=>b.onclick=async()=>{b.disabled=true;try{const r=await api('document',{id,path:b.dataset.path});window.open(r.url,'_blank','noopener,noreferrer')}catch(e){alert(e.message||String(e))}finally{b.disabled=false}});
+ document.querySelectorAll('[data-path]').forEach(b=>b.onclick=async()=>{b.disabled=true;try{const r=await api('document',{id,path:b.dataset.path});window.open(r.url,'_blank','noopener,noreferrer')}catch(e){await window.TestingDialogs.alert(e.message||String(e),{title:'Unable to open document'})}finally{b.disabled=false}});
 }
 async function init(){try{if(type==='labcorp-delivery-detail')await detail();else await list()}catch(e){$('#tmPage').innerHTML=head('Labcorp Delivery')+'<div class="tm-banner error">'+esc(e.message||String(e))+'</div>'}}
 window.TestingPages=Object.freeze({init});
