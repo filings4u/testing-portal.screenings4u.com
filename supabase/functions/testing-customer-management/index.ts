@@ -108,6 +108,30 @@ Deno.serve(async req=>{
    const q=existing.data?await db.from("testing_customer_portal_access").update(row).eq("id",existing.data.id).select("*").single():await db.from("testing_customer_portal_access").insert({id:crypto.randomUUID(),...row}).select("*").single();if(q.error)throw q.error;
    await log(db,id,user.id,"portal_access_"+status,C(b.notes)||null,{portal_access_id:q.data.id});return J({portal_access:q.data});
   }
+  if(a==="send_portal_invite"){
+   const id=C(b.user_id);
+   if(!id)return J({error:"Customer ID required."},400);
+   const acc=await db.from("testing_customer_portal_access").select("status").eq("user_id",id).maybeSingle();
+   if(acc.error)throw acc.error;
+   if(acc.data?.status!=="active")return J({error:"Grant active portal access before sending an invitation."},409);
+   const account=await db.auth.admin.getUserById(id);
+   if(account.error||!account.data?.user?.email)return J({error:"Customer login account is missing an email address."},409);
+   const email=C(account.data.user.email).toLowerCase();
+   const profile=await db.from("user_profiles").select("email").eq("id",id).maybeSingle();
+   if(profile.error)throw profile.error;
+   if(C(profile.data?.email).toLowerCase()!==email)return J({error:"Customer profile and login emails differ. Correct the customer record before inviting."},409);
+   const key=Deno.env.get("RESEND_API_KEY")||"";
+   if(!key)return J({error:"Email delivery is not configured."},503);
+   const link=await db.auth.admin.generateLink({type:"recovery",email,options:{redirectTo:"https://customers.screenings4u.com/reset-password.html"}});
+   if(link.error||!link.data?.properties?.hashed_token)return J({error:"Could not generate a secure customer activation link."},503);
+   const href="https://customers.screenings4u.com/auth-redirect.html?type=recovery&token_hash="+encodeURIComponent(link.data.properties.hashed_token);
+   const html='<div style="font-family:Arial,sans-serif;max-width:560px;margin:auto;color:#19395f"><h2>Your screenings4u customer portal is ready</h2><p>Use the secure button below to set your password and access your existing account and orders.</p><p><a href="'+href+'" style="display:inline-block;padding:14px 18px;background:#22568a;color:#fff;text-decoration:none;border-radius:8px">Activate Customer Portal</a></p><p>If your link expires, visit <a href="https://customers.screenings4u.com/login.html">the customer portal</a> and select Forgot password.</p></div>';
+   const sent=await fetch("https://api.resend.com/emails",{method:"POST",headers:{"Authorization":"Bearer "+key,"Content-Type":"application/json"},body:JSON.stringify({from:Deno.env.get("SCREENINGS4U_SUPPORT_FROM_EMAIL")||"screenings4u Support <support@screenings4u.com>",to:[email],subject:"Activate your screenings4u Customer Portal",html})});
+   const response=await sent.json().catch(()=>({}));
+   if(!sent.ok)return J({error:"Invitation could not be sent: "+C(response.message||"Email delivery failed.")},502);
+   await log(db,id,user.id,"portal_invitation_sent",null,{email,provider_message_id:response.id||null});
+   return J({ok:true,recipient_email:email});
+  }
   if(a==="add_membership"){
    const uid=C(b.user_id),employerId=C(b.employer_id);if(!uid||!employerId)return J({error:"Customer and employer are required."},400);
    const ex=await db.from("testing_employer_members").select("*").eq("user_id",uid).eq("employer_id",employerId).maybeSingle();if(ex.error)throw ex.error;
