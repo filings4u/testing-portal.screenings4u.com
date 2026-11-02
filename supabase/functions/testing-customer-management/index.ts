@@ -77,12 +77,15 @@ Deno.serve(async req=>{
     if(duplicate.data?.length)return J({error:"Email already belongs to another customer."},409);
     const orders=await db.from("orders").select("id,customer_email").eq("user_id",id).eq("fulfillment_type","testing");if(orders.error)throw orders.error;
     const ids=(orders.data||[]).filter((o:any)=>[priorAuth,currentEmail].includes(C(o.customer_email).toLowerCase())).map((o:any)=>o.id);
+    const caseRows=await db.from("testing_cases").select("id,customer_email").eq("customer_user_id",id);if(caseRows.error)throw caseRows.error;
+    const caseIds=(caseRows.data||[]).filter((x:any)=>[priorAuth,currentEmail].includes(C(x.customer_email).toLowerCase())).map((x:any)=>x.id);
     const authChange=await db.auth.admin.updateUserById(id,{email:requestedEmail,email_confirm:true});
     if(authChange.error)return J({error:"Customer login email update failed: "+authChange.error.message},409);
     try{
      patch.email=requestedEmail;
      const updated=await db.from("user_profiles").update(patch).eq("id",id).select("*").single();if(updated.error)throw updated.error;
      if(ids.length){const op:any={customer_email:requestedEmail,updated_at:N()};for(const [field,col] of [["first_name","customer_first_name"],["last_name","customer_last_name"],["phone","customer_phone"]])if(Object.prototype.hasOwnProperty.call(patch,field))op[col]=patch[field];const uq=await db.from("orders").update(op).in("id",ids);if(uq.error)throw uq.error}
+     if(caseIds.length){const cq=await db.from("testing_cases").update({customer_email:requestedEmail}).in("id",caseIds);if(cq.error)throw cq.error}
      await log(db,id,user.id,"customer_profile_updated",C(b.notes)||null,{email_changed:true,orders_updated:ids.length});
      return J({profile:updated.data,orders_updated:ids.length});
     }catch(err){
@@ -90,12 +93,14 @@ Deno.serve(async req=>{
      const rollback=await db.auth.admin.updateUserById(id,{email:priorAuth,email_confirm:true});
      await db.from("user_profiles").update({email:current.data.email,updated_at:N()}).eq("id",id);
      if(ids.length)await db.from("orders").update({customer_email:currentEmail,updated_at:N()}).in("id",ids);
+     if(caseIds.length)await db.from("testing_cases").update({customer_email:currentEmail}).in("id",caseIds);
      return J({error:rollback.error?"Customer email update partially failed; contact administrator to reconcile account.":"Unable to synchronize customer email; previous login restored."},500);
     }
    }
    const q=await db.from("user_profiles").update(patch).eq("id",id).select("*").single();if(q.error)throw q.error;
    const orderPatch:any={};for(const [key,col] of [["first_name","customer_first_name"],["last_name","customer_last_name"],["phone","customer_phone"]])if(Object.prototype.hasOwnProperty.call(patch,key))orderPatch[col]=patch[key];
    if(Object.keys(orderPatch).length){orderPatch.updated_at=N();const linked=await db.from("orders").update(orderPatch).eq("user_id",id).eq("fulfillment_type","testing");if(linked.error)throw linked.error;}
+   if(Object.prototype.hasOwnProperty.call(patch,"first_name")||Object.prototype.hasOwnProperty.call(patch,"last_name")){const full=[q.data.first_name,q.data.last_name].filter(Boolean).join(" ");if(full){const cases=await db.from("testing_cases").update({customer_name:full}).eq("customer_user_id",id);if(cases.error)throw cases.error}}
    await log(db,id,user.id,"customer_profile_updated",C(b.notes)||null,{synced_testing_orders:!!Object.keys(orderPatch).length});return J({profile:q.data});
   }
   if(a==="set_portal_access"){
