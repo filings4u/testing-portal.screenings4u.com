@@ -141,6 +141,8 @@ Deno.serve(async req=>{
    await totalize(db,id);return J(await getOrder(db,id));
   }
   if(a==="change_customer_email"){
+   const adminAccess=await db.from("staff_business_access").select("id").eq("user_id",user.id).eq("business_unit_code","testing").eq("active",true).eq("access_level","admin").limit(1);
+   if(adminAccess.error)throw adminAccess.error;if(!adminAccess.data?.length)return J({error:"Testing administrator access required for login email changes."},403);
    const orderId=C(b.order_id),newEmail=C(b.new_email).toLowerCase();
    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)||newEmail.length>254)return J({error:"Enter a valid new email address."},400);
    if(C(b.confirm)!=="CHANGE_CUSTOMER_LOGIN")return J({error:"Customer login email change must be explicitly confirmed."},400);
