@@ -140,6 +140,38 @@ Deno.serve(async req=>{
    }
    await totalize(db,id);return J(await getOrder(db,id));
   }
+  if(a==="change_customer_email"){
+   const orderId=C(b.order_id),newEmail=C(b.new_email).toLowerCase();
+   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(newEmail)||newEmail.length>254)return J({error:"Enter a valid new email address."},400);
+   if(C(b.confirm)!=="CHANGE_CUSTOMER_LOGIN")return J({error:"Customer login email change must be explicitly confirmed."},400);
+   const detail=await getOrder(db,orderId),order=detail.order,uid=C(order.user_id);
+   if(!uid)return J({error:"This order is not linked to a customer login. Link an existing customer account first."},409);
+   const account=await db.auth.admin.getUserById(uid);if(account.error||!account.data.user)return J({error:"The linked customer login could not be found."},409);
+   const oldEmail=C(account.data.user.email).toLowerCase();
+   if(oldEmail===newEmail)return J({ok:true,unchanged:true});
+   const oldOrderEmail=C(order.customer_email).toLowerCase();
+   if(oldEmail!==oldOrderEmail)return J({error:"This order already has a customer login/email mismatch. Resolve the account linkage before changing the login email."},409);
+   const profile=await db.from("user_profiles").select("id,email").eq("id",uid).maybeSingle();if(profile.error)throw profile.error;
+   const duplicate=await db.from("user_profiles").select("id").ilike("email",newEmail).neq("id",uid).limit(1);if(duplicate.error)throw duplicate.error;
+   if(duplicate.data?.length)return J({error:"That email is already assigned to a different customer. Select the existing customer account instead."},409);
+   const orders=await db.from("orders").select("id,customer_email").eq("user_id",uid).eq("fulfillment_type","testing");if(orders.error)throw orders.error;
+   const oldOrderIds=(orders.data||[]).filter((o:any)=>C(o.customer_email).toLowerCase()===oldEmail).map((o:any)=>o.id);
+   const changed=await db.auth.admin.updateUserById(uid,{email:newEmail,email_confirm:true});
+   if(changed.error)return J({error:"Unable to update customer login email: "+changed.error.message},409);
+   try{
+    if(profile.data){const u=await db.from("user_profiles").update({email:newEmail,updated_at:N()}).eq("id",uid);if(u.error)throw u.error}
+    if(oldOrderIds.length){const u=await db.from("orders").update({customer_email:newEmail,updated_at:N()}).in("id",oldOrderIds);if(u.error)throw u.error}
+   }catch(e){
+    console.error("Customer email synchronization failed; attempting rollback",e);
+    const roll=await db.auth.admin.updateUserById(uid,{email:oldEmail,email_confirm:true});
+    if(profile.data)await db.from("user_profiles").update({email:profile.data.email,updated_at:N()}).eq("id",uid);
+    if(oldOrderIds.length)await db.from("orders").update({customer_email:oldEmail,updated_at:N()}).in("id",oldOrderIds);
+    return J({error:roll.error?"Email update partially failed. Contact support immediately to reconcile customer records.":"Could not complete customer email update; previous login email was restored."},500);
+   }
+   const audit=await db.from("management_audit_events").insert({actor_user_id:user.id,portal_code:"testing",action:"customer_login_email_changed",entity_type:"customer",entity_id:uid,metadata:{old_email:oldEmail,new_email:newEmail,orders_updated:oldOrderIds.length,order_id:orderId}});
+   if(audit.error)console.error("Customer email update audit failed",audit.error);
+   return J({ok:true,user_id:uid,email:newEmail,orders_updated:oldOrderIds.length,audit_recorded:!audit.error});
+  }
   if(a==="update"){
    const id=C(b.order_id);if(!id)return J({error:"Order id is required."},400);await getOrder(db,id);
    const patch:any={updated_at:N()};
