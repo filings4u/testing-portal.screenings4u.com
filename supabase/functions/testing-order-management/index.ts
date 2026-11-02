@@ -150,14 +150,14 @@ Deno.serve(async req=>{
    if(!uid)return J({error:"This order is not linked to a customer login. Link an existing customer account first."},409);
    const account=await db.auth.admin.getUserById(uid);if(account.error||!account.data.user)return J({error:"The linked customer login could not be found."},409);
    const oldEmail=C(account.data.user.email).toLowerCase();
-   if(oldEmail===newEmail)return J({ok:true,unchanged:true});
    const oldOrderEmail=C(order.customer_email).toLowerCase();
-   if(oldEmail!==oldOrderEmail)return J({error:"This order already has a customer login/email mismatch. Resolve the account linkage before changing the login email."},409);
+   if(oldEmail===newEmail&&oldOrderEmail===newEmail&&C(order.user_id)===uid)return J({ok:true,unchanged:true});
    const profile=await db.from("user_profiles").select("id,email").eq("id",uid).maybeSingle();if(profile.error)throw profile.error;
    const duplicate=await db.from("user_profiles").select("id").ilike("email",newEmail).neq("id",uid).limit(1);if(duplicate.error)throw duplicate.error;
    if(duplicate.data?.length)return J({error:"That email is already assigned to a different customer. Select the existing customer account instead."},409);
    const orders=await db.from("orders").select("id,customer_email").eq("user_id",uid).eq("fulfillment_type","testing");if(orders.error)throw orders.error;
-   const oldOrderIds=(orders.data||[]).filter((o:any)=>C(o.customer_email).toLowerCase()===oldEmail).map((o:any)=>o.id);
+   const oldOrderIds=(orders.data||[]).filter((o:any)=>[oldEmail,oldOrderEmail,C(profile.data?.email).toLowerCase()].includes(C(o.customer_email).toLowerCase())).map((o:any)=>o.id);
+   if(!oldOrderIds.includes(orderId))oldOrderIds.push(orderId);
    const changed=await db.auth.admin.updateUserById(uid,{email:newEmail,email_confirm:true});
    if(changed.error)return J({error:"Unable to update customer login email: "+changed.error.message},409);
    try{
@@ -167,7 +167,7 @@ Deno.serve(async req=>{
     console.error("Customer email synchronization failed; attempting rollback",e);
     const roll=await db.auth.admin.updateUserById(uid,{email:oldEmail,email_confirm:true});
     if(profile.data)await db.from("user_profiles").update({email:profile.data.email,updated_at:N()}).eq("id",uid);
-    if(oldOrderIds.length)await db.from("orders").update({customer_email:oldEmail,updated_at:N()}).in("id",oldOrderIds);
+    for(const prior of orders.data||[]){if(oldOrderIds.includes(prior.id))await db.from("orders").update({customer_email:prior.customer_email,updated_at:N()}).eq("id",prior.id)}
     return J({error:roll.error?"Email update partially failed. Contact support immediately to reconcile customer records.":"Could not complete customer email update; previous login email was restored."},500);
    }
    const audit=await db.from("management_audit_events").insert({actor_user_id:user.id,portal_code:"testing",action:"customer_login_email_changed",entity_type:"customer",entity_id:uid,metadata:{old_email:oldEmail,new_email:newEmail,orders_updated:oldOrderIds.length,order_id:orderId}});
@@ -181,7 +181,7 @@ Deno.serve(async req=>{
    for(const f of ["customer_email","customer_first_name","customer_last_name","customer_phone","company_name","notes","internal_notes","customer_notes","billing_address_line_1","billing_address_line_2","billing_city","billing_state","billing_postal_code","billing_country"])if(Object.prototype.hasOwnProperty.call(b,f))patch[f]=C(b[f])||null;
    if(Object.prototype.hasOwnProperty.call(b,"tax"))patch.tax=Number(b.tax||0);
    if(Object.prototype.hasOwnProperty.call(b,"discount_amount"))patch.discount_amount=Number(b.discount_amount||0);
-   if(Object.prototype.hasOwnProperty.call(patch,"user_id")||Object.prototype.hasOwnProperty.call(patch,"customer_email")){const original=await db.from("orders").select("user_id,customer_email").eq("id",id).single();if(original.error)throw original.error;const linked=Object.prototype.hasOwnProperty.call(patch,"user_id")?patch.user_id:original.data.user_id;const email=C(Object.prototype.hasOwnProperty.call(patch,"customer_email")?patch.customer_email:original.data.customer_email).toLowerCase();const identityChanged=linked!==original.data.user_id||email!==C(original.data.customer_email).toLowerCase();if(!identityChanged){delete patch.user_id;delete patch.customer_email;}else if(linked){const account=await db.auth.admin.getUserById(linked);if(account.error||!account.data.user)return J({error:"Selected customer portal account was not found. Choose an existing account or leave the account unchanged."},409);if(C(account.data.user.email).toLowerCase()!==email)return J({error:"The customer login email differs from this order email. Change the login email through the customer account management process before relinking the order, or select an account whose email matches."},409);}}
+   if(Object.prototype.hasOwnProperty.call(patch,"user_id")||Object.prototype.hasOwnProperty.call(patch,"customer_email")){const original=await db.from("orders").select("user_id,customer_email").eq("id",id).single();if(original.error)throw original.error;const linked=Object.prototype.hasOwnProperty.call(patch,"user_id")?patch.user_id:original.data.user_id;const email=C(Object.prototype.hasOwnProperty.call(patch,"customer_email")?patch.customer_email:original.data.customer_email).toLowerCase();const identityChanged=linked!==original.data.user_id||email!==C(original.data.customer_email).toLowerCase();if(!identityChanged){delete patch.user_id;delete patch.customer_email;}else if(linked){const account=await db.auth.admin.getUserById(linked);if(account.error||!account.data.user)return J({error:"Selected customer portal account was not found. Choose an existing account or leave the account unchanged."},409);if(linked!==original.data.user_id){patch.customer_email=C(account.data.user.email).toLowerCase();}else if(C(account.data.user.email).toLowerCase()!==email)return J({error:"Changing the login email requires confirmation. Use the customer email change action."},409);}}
    const q=await db.from("orders").update(patch).eq("id",id).select("*").single();if(q.error)throw q.error;await totalize(db,id);return J(await getOrder(db,id));
   }
   if(a==="add_item"){
