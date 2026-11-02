@@ -94,7 +94,9 @@ Deno.serve(async req=>{
     }
    }
    const q=await db.from("user_profiles").update(patch).eq("id",id).select("*").single();if(q.error)throw q.error;
-   await log(db,id,user.id,"customer_profile_updated",C(b.notes)||null);return J({profile:q.data});
+   const orderPatch:any={};for(const [key,col] of [["first_name","customer_first_name"],["last_name","customer_last_name"],["phone","customer_phone"]])if(Object.prototype.hasOwnProperty.call(patch,key))orderPatch[col]=patch[key];
+   if(Object.keys(orderPatch).length){orderPatch.updated_at=N();const linked=await db.from("orders").update(orderPatch).eq("user_id",id).eq("fulfillment_type","testing");if(linked.error)throw linked.error;}
+   await log(db,id,user.id,"customer_profile_updated",C(b.notes)||null,{synced_testing_orders:!!Object.keys(orderPatch).length});return J({profile:q.data});
   }
   if(a==="set_portal_access"){
    const id=C(b.user_id),status=C(b.status);if(!id||!["active","suspended","revoked"].includes(status))return J({error:"Customer and valid portal status are required."},400);
