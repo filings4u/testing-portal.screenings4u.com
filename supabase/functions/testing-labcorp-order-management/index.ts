@@ -100,6 +100,9 @@ Deno.serve(async req=>{
 const DEV_LABCORP_PANELS:Record<string,string[]>={"01109090":["806698"],"393166":["4549490002"],"576898":["PCA-10X3S-LC"],"576899":["4552950001","4552950002","4552950003","4552950004","4552950005","4552950006","4552950007","4552950008","4552950009","4552950010"]};
 function validateDevAccount(x:any){const account=C(x.account_number),location=C(x.account_location_code),panels=Array.isArray(x.panel_ids)?x.panel_ids.map(C):[];if(!DEV_LABCORP_PANELS[account]||location!==account)return "Use an assigned Labcorp DEV account and matching location code";if(!panels.length||panels.some((id:string)=>!DEV_LABCORP_PANELS[account].includes(id)))return "Selected panel is not assigned to this Labcorp DEV account";if(account.length===6&&panels.length!==1)return "Six-digit Labcorp accounts support one panel per registration";return ""}
   if(a==="create"){const mappingError=validateDevAccount(b);if(mappingError)return J({error:mappingError},400);
+   const configured=await db.from("testing_labcorp_account_panels").select("panel_id").eq("environment",labcorpEnvironment()).eq("account_number",C(b.account_number)).eq("account_location_code",C(b.account_location_code)).in("panel_id",Array.isArray(b.panel_ids)?b.panel_ids.map(C):[]);
+   if(configured.error)throw configured.error;
+   if(!Array.isArray(b.panel_ids)||!b.panel_ids.length||b.panel_ids.some((v:any)=>!(configured.data||[]).some((x:any)=>x.panel_id===C(v))))return J({error:"Selected Labcorp account/panel is not configured for the active environment."},409);
    const orderId=C(b.order_id)||null,itemId=C(b.order_item_id)||null,caseId=C(b.testing_case_id)||null;
    const q=await db.from("testing_labcorp_orders").insert({
     id:crypto.randomUUID(),order_id:orderId,order_item_id:itemId,testing_case_id:caseId,customer_user_id:C(b.customer_user_id)||null,employer_id:C(b.employer_id)||null,
@@ -116,6 +119,9 @@ function validateDevAccount(x:any){const account=C(x.account_number),location=C(
    if(Object.prototype.hasOwnProperty.call(b,"observed_collection_requested"))patch.observed_collection_requested=Boolean(b.observed_collection_requested);
    patch.split_specimen_requested=isDotAuthority(Object.prototype.hasOwnProperty.call(b,"testing_authority")?b.testing_authority:current.testing_authority)||Boolean(Object.prototype.hasOwnProperty.call(b,"split_specimen_requested")?b.split_specimen_requested:current.split_specimen_requested);
    const mappingError=validateDevAccount({...current,...patch});if(mappingError)return J({error:mappingError},400);
+   const nextRecord={...current,...patch};const available=await db.from("testing_labcorp_account_panels").select("panel_id").eq("environment",labcorpEnvironment()).eq("account_number",C(nextRecord.account_number)).eq("account_location_code",C(nextRecord.account_location_code)).in("panel_id",nextRecord.panel_ids||[]);
+   if(available.error)throw available.error;
+   if(!Array.isArray(nextRecord.panel_ids)||!nextRecord.panel_ids.length||nextRecord.panel_ids.some((v:any)=>!(available.data||[]).some((x:any)=>x.panel_id===C(v))))return J({error:"Account/panel mapping not configured for active Labcorp environment."},409);
    const q=await db.from("testing_labcorp_orders").update(patch).eq("id",id).select("*").single();if(q.error)throw q.error;await event(db,id,user.id,"labcorp_order_updated","internal",C(b.change_note)||null,{previous_status:current.status});return J({labcorp_order:q.data})
   }
   if(a==="submit"){
@@ -123,9 +129,9 @@ function validateDevAccount(x:any){const account=C(x.account_number),location=C(
    for(const [k,v] of [["account number",r.account_number],["donor first name",r.donor_first_name],["donor last name",r.donor_last_name],["reason for test",r.donor_reason_for_test],["state of residence",r.donor_state_of_residence],["registration expiration",r.registration_expiration_at]])if(!v)return J({error:"Labcorp "+k+" is required before submission."},400);
    if(r.status!=="draft"||r.labcorp_registration_number)return J({error:"Only unregistered draft orders may be submitted."},409);
    const mappingError=validateDevAccount(r);if(mappingError)return J({error:mappingError},409);
-   const config=lc();if(!config.endpoint.startsWith("https://services-cert.labcorpsolutions.com/"))return J({error:"Production Labcorp submissions require separate go-live approval."},409);
+   requireLabcorpConfig();
    if(!Array.isArray(r.panel_ids)||r.panel_ids.length===0)return J({error:"At least one mapped Labcorp panel is required."},400);
-   for(const panel of r.panel_ids){const m=await db.from("testing_labcorp_account_panels").select("mapping_status,enabled_for_submission").eq("account_number",r.account_number).eq("account_location_code",r.account_location_code).eq("panel_id",panel).eq("environment","cert").eq("mapping_status","approved").eq("enabled_for_submission",true).limit(1);if(m.error)throw m.error;if(!m.data?.length)return J({error:"Labcorp panel "+panel+" is not approved for certification submission."},409);}
+   for(const panel of r.panel_ids){const m=await db.from("testing_labcorp_account_panels").select("mapping_status,enabled_for_submission").eq("account_number",r.account_number).eq("account_location_code",r.account_location_code).eq("panel_id",panel).eq("environment",labcorpEnvironment()).eq("mapping_status","approved").eq("enabled_for_submission",true).limit(1);if(m.error)throw m.error;if(!m.data?.length)return J({error:"Labcorp panel "+panel+" is not approved for "+labcorpEnvironment()+" submission."},409);}
    // One shared Labcorp registration engine; never call Labcorp SOAP directly here.
    const svc=Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")||"",url=Deno.env.get("SUPABASE_URL")||"";
    const upstream=await fetch(url+"/functions/v1/testing-labcorp-register-shared",{method:"POST",headers:{"Authorization":"Bearer "+svc,"apikey":svc,"Content-Type":"application/json"},body:JSON.stringify({labcorp_order_id:id,mode:"manual"}),signal:AbortSignal.timeout(35000)});
@@ -145,7 +151,7 @@ function validateDevAccount(x:any){const account=C(x.account_number),location=C(
   if(a==="catalog_review"){const panelRows=await db.from("testing_labcorp_account_panels").select("panel_id,account_number,account_location_code,environment,product_sku,mapping_status,enabled_for_submission,labcorp_profile_number,labcorp_test_code,notes").eq("environment",labcorpEnvironment()).order("account_number").order("panel_id");if(panelRows.error)throw panelRows.error;const services=await db.from("services").select("sku,name,description,active,metadata").eq("product_type","service").eq("active",true);if(services.error)throw services.error;return J({environment:labcorpEnvironment(),accounts:[...new Set((panelRows.data||[]).map((x:any)=>x.account_number))],panels:panelRows.data||[],assigned_panels:panelRows.data||[],other_requested_panels:[],services:(services.data||[]).filter((x:any)=>/drug|panel|alcohol|etg|hair|instant/i.test(x.name+" "+x.sku))})}
   if(a==="get_panel"){
    const panel=C(b.panel_id);if(!panel)return J({error:"Panel id is required."},400);
-   if(!Object.values(DEV_LABCORP_PANELS).some((ids:string[])=>ids.includes(panel)))return J({error:"Only assigned Labcorp DEV panels may be looked up."},400);const xml=await soap("getPanelDetails",tag("panelId",panel));return J({panel_id:panel,raw_xml:xml})
+   const assigned=await db.from("testing_labcorp_account_panels").select("id").eq("environment",labcorpEnvironment()).eq("panel_id",panel).limit(1);if(assigned.error)throw assigned.error;if(!assigned.data?.length)return J({error:"Panel is not mapped for the active Labcorp environment."},400);const xml=await soap("getPanelDetails",tag("panelId",panel));return J({panel_id:panel,raw_xml:xml})
   }
   if(a==="locate_sites"){
    const zip=C(b.zip),distance=Math.max(0,Math.min(99,Number(b.distance||25)));if(!/^\d{5}$/.test(zip))return J({error:"A valid 5-digit ZIP code is required."},400);
