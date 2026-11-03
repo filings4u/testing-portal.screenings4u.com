@@ -177,11 +177,8 @@ function validateDevAccount(x:any){const account=C(x.account_number),location=C(
    const id=C(b.id||b.labcorp_order_id),type=Number(b.resend_type||1),d=await row(db,id),r=d.labcorp_order;if(!r.labcorp_registration_number)return J({error:"Labcorp registration number is required."},409);
    await soap("resend",tag("labcorpRegistrationNumber",r.labcorp_registration_number)+tag("resendTypeId",type));await event(db,id,user.id,"labcorp_resend_requested","outbound",null,{resend_type:type});return J({ok:true})
   }
-  if(a==="delete_registration"){
-   const id=C(b.id||b.labcorp_order_id),d=await row(db,id),r=d.labcorp_order;if(!r.labcorp_registration_number)return J({error:"Labcorp registration number is required."},409);
-   await soap("deleteRegistration",tag("labcorpRegistrationNumber",r.labcorp_registration_number));
-   const q=await db.from("testing_labcorp_orders").update({status:"cancelled",updated_by:user.id,updated_at:N()}).eq("id",id).select("*").single();if(q.error)throw q.error;await event(db,id,user.id,"labcorp_registration_deleted","outbound",C(b.notes)||null);return J({labcorp_order:q.data})
-  }
+  if(a==="delete_registration")return J({error:"Sent Labcorp registrations cannot be deleted. Use authorized cancellation procedures outside this feature."},409);
+
   return J({error:"Unsupported Labcorp order action."},400);
  }catch(e:any){console.error("testing-labcorp-order-management",e);return J({error:e instanceof Error?e.message:String(e)},Number(e?.status||500))}
 });
