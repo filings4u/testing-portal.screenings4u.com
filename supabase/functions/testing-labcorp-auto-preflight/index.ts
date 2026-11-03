@@ -17,7 +17,7 @@ Deno.serve(async(req)=>{
   for(const record of lab.data||[]){
    const blockers=[];
    if(order.data.payment_status!=="paid"||!order.data.paid_at)blockers.push("Payment not confirmed");
-   if(record.labcorp_registration_number){checks.push({labcorp_order_id:record.id,ready:false,already_registered:true,blockers:[]});continue}
+   if(record.labcorp_registration_number){checks.push({labcorp_order_id:record.id,ready:true,already_registered:true,blockers:[]});continue}
    if(record.status!=="draft")blockers.push("Not a draft: manual reconciliation required");
    if(!["01109090","393166","576898","576899"].includes(record.account_number))blockers.push("Invalid DEV account/location code");
    const item=record.order_item_id?await db.from("order_items").select("id,services(slug,metadata)").eq("id",record.order_item_id).eq("order_id",id).maybeSingle():null;
