@@ -26,7 +26,7 @@ Deno.serve(async(req:Request)=>{
   const contract171=environment==="prod"&&["956811","957129"].includes(r.account_number);
   if(contract171){
    if(!r.panel_ids.every((code:string)=>(mapping.data||[]).some((m:any)=>
-     m.panel_id===code&&m.labcorp_test_code===code&&/^\\d+$/.test(m.labcorp_profile_number||""))))
+     m.panel_id===code&&m.labcorp_test_code===code&&/^\d+$/.test(m.labcorp_profile_number||""))))
      err("Contract 171 requires a mapped OTS profile for every test code");
   }
   if(mode==="automatic"){
@@ -35,7 +35,7 @@ Deno.serve(async(req:Request)=>{
    const payment=await db.from("orders").select("payment_status,paid_at").eq("id",r.order_id).maybeSingle();if(payment.error)throw payment.error;
    if(payment.data?.payment_status!=="paid"||!payment.data?.paid_at)err("Payment not confirmed");
    const item=await db.from("order_items").select("services(metadata)").eq("order_id",r.order_id).eq("id",r.order_item_id).maybeSingle();if(item.error)throw item.error;
-   const service:any=item.data?.services,expected=service?.metadata?.labcorp_panel_ids;
+   const service:any=item.data?.services,expected=environment==="prod"?service?.metadata?.labcorp_prod_panel_ids:service?.metadata?.labcorp_panel_ids;
    if(service?.metadata?.labcorp_fulfillment!==true||!Array.isArray(expected)||JSON.stringify(expected.map(String))!==JSON.stringify(r.panel_ids))err("Paid product-panel mapping mismatch");
   }
   const endpoint=Deno.env.get("LABCORP_OTS_ENDPOINT")||(environment==="prod"?"https://services.labcorpsolutions.com/webservice/services/LabcorpOTS":"https://services-cert.labcorpsolutions.com/webservice/services/LabcorpOTS");
