@@ -26,7 +26,7 @@ Deno.serve(async(req:Request)=>{
   const contract171=environment==="prod"&&["956811","957129"].includes(r.account_number);
   if(contract171){
    if(!r.panel_ids.every((code:string)=>(mapping.data||[]).some((m:any)=>
-     m.panel_id===code&&m.labcorp_test_code===code&&/^\\d+$/.test(m.labcorp_profile_number||""))))
+     m.panel_id===code&&m.labcorp_test_code===code&&/^\d+$/.test(m.labcorp_profile_number||""))))
      err("Contract 171 requires a mapped OTS profile for every test code");
   }
   if(mode==="automatic"){
