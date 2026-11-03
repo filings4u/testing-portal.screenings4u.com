@@ -20,7 +20,16 @@ async function ctx(req:Request){
  if(!sp.data||sp.data.employment_status!=="active"||!ba.data)throw Object.assign(new Error("Testing Management access required."),{status:403});
  return{db,user:u.data.user};
 }
-const lc=()=>({endpoint:C(Deno.env.get("LABCORP_OTS_ENDPOINT"))||"https://services-cert.labcorpsolutions.com/webservice/services/LabcorpOTS",user:C(Deno.env.get("LABCORP_OTS_USER")),password:C(Deno.env.get("LABCORP_OTS_PASSWORD"))});
+const labcorpEnvironment=()=>Deno.env.get("LABCORP_OTS_ENVIRONMENT")==="prod"?"prod":"cert";
+const lc=()=>({endpoint:C(Deno.env.get("LABCORP_OTS_ENDPOINT"))||(labcorpEnvironment()==="prod"?"https://services.labcorpsolutions.com/webservice/services/LabcorpOTS":"https://services-cert.labcorpsolutions.com/webservice/services/LabcorpOTS"),user:C(Deno.env.get("LABCORP_OTS_USER")),password:C(Deno.env.get("LABCORP_OTS_PASSWORD"))});
+function requireLabcorpConfig(){
+ const c=lc(),prod=labcorpEnvironment()==="prod",host=prod?"services.labcorpsolutions.com":"services-cert.labcorpsolutions.com";
+ let endpoint:URL;try{endpoint=new URL(c.endpoint)}catch{throw Object.assign(new Error("Labcorp endpoint is invalid"),{status:503})}
+ if(endpoint.protocol!=="https:"||endpoint.hostname!==host||endpoint.pathname!=="/webservice/services/LabcorpOTS"||endpoint.search||endpoint.hash||endpoint.username||endpoint.password)throw Object.assign(new Error("Labcorp endpoint does not match "+labcorpEnvironment()+" environment"),{status:503});
+ if(prod&&Deno.env.get("LABCORP_PROD_ENABLED")!=="true")throw Object.assign(new Error("Labcorp production is not enabled"),{status:503});
+ if(!c.user||!c.password)throw Object.assign(new Error("Labcorp credentials are missing"),{status:503});
+ return c;
+}
 async function soap(action:string,inner:string){
  const c=lc();if(!c.endpoint||!c.user||!c.password)throw Object.assign(new Error("Labcorp OTS credentials are not configured yet."),{status:503});
  const body=`<?xml version="1.0" encoding="UTF-8"?><soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:ws="http://ws.ots.labcorp.com"><soapenv:Header/><soapenv:Body><ws:${action}>${tag("ws:userId",c.user)}${tag("ws:password",c.password)}${action==="getPanelDetails"?inner.replace(/<panelId>/g,"<ws:panelId>").replace(/<\/panelId>/g,"</ws:panelId>"):inner}</ws:${action}></soapenv:Body></soapenv:Envelope>`;
@@ -98,7 +107,14 @@ Deno.serve(async req=>{
   }
   if(a==="get"){const id=C(b.id||b.labcorp_order_id);if(!id)return J({error:"Labcorp order id is required."},400);return J(await row(db,id))}
 const DEV_LABCORP_PANELS:Record<string,string[]>={"01109090":["806698"],"393166":["4549490002"],"576898":["PCA-10X3S-LC"],"576899":["4552950001","4552950002","4552950003","4552950004","4552950005","4552950006","4552950007","4552950008","4552950009","4552950010"]};
-function validateDevAccount(x:any){const account=C(x.account_number),location=C(x.account_location_code),panels=Array.isArray(x.panel_ids)?x.panel_ids.map(C):[];if(!DEV_LABCORP_PANELS[account]||location!==account)return "Use an assigned Labcorp DEV account and matching location code";if(!panels.length||panels.some((id:string)=>!DEV_LABCORP_PANELS[account].includes(id)))return "Selected panel is not assigned to this Labcorp DEV account";if(account.length===6&&panels.length!==1)return "Six-digit Labcorp accounts support one panel per registration";return ""}
+function validateDevAccount(x:any){
+ const account=C(x.account_number),location=C(x.account_location_code),panels=Array.isArray(x.panel_ids)?x.panel_ids.map(C):[];
+ if(!account||!location||!panels.length||panels.some((v:string)=>!v))return "Labcorp account, location and panel are required";
+ if(labcorpEnvironment()==="prod")return "";
+ const cert:Record<string,string[]>={"01109090":["806698"],"393166":["4549490002"],"576898":["PCA-10X3S-LC"],"576899":["4552950001","4552950002","4552950003","4552950004","4552950005","4552950006","4552950007","4552950008","4552950009","4552950010"]};
+ if(!cert[account]||location!==account||panels.some((v:string)=>!cert[account].includes(v)))return "Select an assigned certification account and panel";
+ return "";
+}
   if(a==="create"){const mappingError=validateDevAccount(b);if(mappingError)return J({error:mappingError},400);
    const configured=await db.from("testing_labcorp_account_panels").select("panel_id").eq("environment",labcorpEnvironment()).eq("account_number",C(b.account_number)).eq("account_location_code",C(b.account_location_code)).in("panel_id",Array.isArray(b.panel_ids)?b.panel_ids.map(C):[]);
    if(configured.error)throw configured.error;
