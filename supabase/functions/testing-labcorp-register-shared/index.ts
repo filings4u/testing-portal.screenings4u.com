@@ -19,8 +19,16 @@ Deno.serve(async(req:Request)=>{
   const environment=Deno.env.get("LABCORP_OTS_ENVIRONMENT")==="prod"?"prod":"cert";
   if(environment==="prod"&&Deno.env.get("LABCORP_PROD_ENABLED")!=="true")err("Production submissions are not enabled",503);
   validate(d,environment);
-  const mapping=await db.from("testing_labcorp_account_panels").select("panel_id,mapping_status,enabled_for_submission").eq("environment",environment).eq("account_number",r.account_number).eq("account_location_code",r.account_location_code).in("panel_id",r.panel_ids);if(mapping.error)throw mapping.error;
+  const mapping=await db.from("testing_labcorp_account_panels").select("panel_id,labcorp_profile_number,labcorp_test_code,mapping_status,enabled_for_submission").eq("environment",environment).eq("account_number",r.account_number).eq("account_location_code",r.account_location_code).in("panel_id",r.panel_ids);if(mapping.error)throw mapping.error;
   if(!r.panel_ids.every((p:string)=>(mapping.data||[]).some((m:any)=>m.panel_id===p&&m.mapping_status==="approved"&&m.enabled_for_submission===true)))err("Panel approval required");
+  // Contract 171 supplies distinct OTS profile numbers and Labcorp test codes.
+  // Preserve the selected test code in our order; submit its assigned profile to OTS.
+  const contract171=environment==="prod"&&["956811","957129"].includes(r.account_number);
+  if(contract171){
+   if(!r.panel_ids.every((code:string)=>(mapping.data||[]).some((m:any)=>
+     m.panel_id===code&&m.labcorp_test_code===code&&/^\\d+$/.test(m.labcorp_profile_number||""))))
+     err("Contract 171 requires a mapped OTS profile for every test code");
+  }
   if(mode==="automatic"){
    if(Deno.env.get(environment==="prod"?"LABCORP_AUTO_PROD_ENABLED":"LABCORP_AUTO_CERT_ENABLED")!=="true")err("Automatic Labcorp submission disabled");
    if(!r.order_id||!r.order_item_id)err("Paid order/item linkage required");
@@ -39,7 +47,11 @@ Deno.serve(async(req:Request)=>{
   if(!user||!password)err("Labcorp credentials are not configured",503);
   if(body.validate_only===true)return J({ok:true,eligible:true,mode,labcorp_order_id:id,will_submit:false});
   const claim=await db.from("testing_labcorp_orders").update({status:"submitting",client_registration_id:d.client_registration_id,updated_at:new Date().toISOString()}).eq("id",id).eq("status","draft").is("labcorp_registration_number",null).select("id").maybeSingle();if(claim.error)throw claim.error;if(!claim.data)err("Draft was already claimed");claimed=true;
-  const result=await registerDonor(d,{endpoint,user,password,environment});
+  const registration=contract171?{...d,panel_ids:d.panel_ids.map((code:string)=>{
+    const match=(mapping.data||[]).find((m:any)=>m.panel_id===code&&m.labcorp_test_code===code);
+    return String(match.labcorp_profile_number);
+  })}:d;
+  const result=await registerDonor(registration,{endpoint,user,password,environment});
   const timestamp=result.registrationDateTime&&Number.isFinite(Date.parse(result.registrationDateTime))?new Date(result.registrationDateTime).toISOString():new Date().toISOString();
   const saved=await db.from("testing_labcorp_orders").update({status:"registered",labcorp_registration_number:result.registrationNumber,registration_created_at:timestamp,submitted_at:new Date().toISOString(),last_synced_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq("id",id).eq("status","submitting").select("id,labcorp_registration_number,status").single();if(saved.error)throw saved.error;
   return J({ok:true,labcorp_order:saved.data});
