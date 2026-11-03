@@ -35,7 +35,7 @@ async function row(db:any,id:string){
   q.data.order_item_id?db.from("order_items").select("*,services(*)").eq("id",q.data.order_item_id).maybeSingle():Promise.resolve({data:null,error:null}),
   q.data.testing_case_id?db.from("testing_cases").select("*").eq("id",q.data.testing_case_id).maybeSingle():Promise.resolve({data:null,error:null})
  ]);for(const x of [events,order,item,caze])if(x.error)throw x.error;
- return{labcorp_order:q.data,events:events.data||[],order:order.data||null,order_item:item.data||null,case:caze.data||null,integration:{configured:Boolean(lc().endpoint&&lc().user&&lc().password),endpoint_configured:Boolean(lc().endpoint)}};
+ return{labcorp_order:q.data,events:events.data||[],order:order.data||null,order_item:item.data||null,case:caze.data||null,integration:{configured:Boolean(lc().endpoint&&lc().user&&lc().password),endpoint_configured:Boolean(lc().endpoint),environment:labcorpEnvironment(),production_enabled:Deno.env.get("LABCORP_PROD_ENABLED")==="true",automatic_production_enabled:Deno.env.get("LABCORP_AUTO_PROD_ENABLED")==="true"}};
 }
 async function event(db:any,id:string,userId:string,type:string,direction="internal",notes:string|null=null,payload:any={}){
  const q=await db.from("testing_labcorp_order_events").insert({id:crypto.randomUUID(),labcorp_order_id:id,event_type:type,direction,notes,actor_user_id:userId,payload,created_at:N()});if(q.error)throw q.error;
@@ -55,7 +55,7 @@ Deno.serve(async req=>{
  if(req.method!=="POST")return J({error:"Method not allowed."},405);
  try{
   const{db,user}=await ctx(req),b=await req.json().catch(()=>({})),a=C(b.action||"list");
-  if(a==="list"){const q=await db.from("testing_labcorp_orders").select("*").order("created_at",{ascending:false}).limit(5000);if(q.error)throw q.error;const lr=await db.from("testing_donor_location_requests").select("*").limit(5000);if(lr.error)throw lr.error;return J({labcorp_orders:q.data||[],location_requests:lr.data||[],integration:{configured:Boolean(lc().endpoint&&lc().user&&lc().password),endpoint_configured:Boolean(lc().endpoint)}})}
+  if(a==="list"){const q=await db.from("testing_labcorp_orders").select("*").order("created_at",{ascending:false}).limit(5000);if(q.error)throw q.error;const lr=await db.from("testing_donor_location_requests").select("*").limit(5000);if(lr.error)throw lr.error;return J({labcorp_orders:q.data||[],location_requests:lr.data||[],integration:{configured:Boolean(lc().endpoint&&lc().user&&lc().password),endpoint_configured:Boolean(lc().endpoint),environment:labcorpEnvironment(),production_enabled:Deno.env.get("LABCORP_PROD_ENABLED")==="true",automatic_production_enabled:Deno.env.get("LABCORP_AUTO_PROD_ENABLED")==="true"}})}
   if(a==="list_sent"){
     const q=await db.from("testing_labcorp_orders").select("*").order("created_at",{ascending:false}).limit(5000);
     if(q.error)throw q.error;
@@ -94,7 +94,7 @@ Deno.serve(async req=>{
     db.from("testing_cases").select("*").order("created_at",{ascending:false}).limit(3000)
    ]);if(orders.error)throw orders.error;if(cases.error)throw cases.error;
    const ids=(orders.data||[]).map((x:any)=>x.id),items=ids.length?await db.from("order_items").select("*,services(*)").in("order_id",ids):{data:[],error:null};if(items.error)throw items.error;
-   return J({orders:orders.data||[],order_items:items.data||[],cases:cases.data||[],integration:{configured:Boolean(lc().endpoint&&lc().user&&lc().password),endpoint_configured:Boolean(lc().endpoint)}})
+   return J({orders:orders.data||[],order_items:items.data||[],cases:cases.data||[],integration:{configured:Boolean(lc().endpoint&&lc().user&&lc().password),endpoint_configured:Boolean(lc().endpoint),environment:labcorpEnvironment(),production_enabled:Deno.env.get("LABCORP_PROD_ENABLED")==="true",automatic_production_enabled:Deno.env.get("LABCORP_AUTO_PROD_ENABLED")==="true"}})
   }
   if(a==="get"){const id=C(b.id||b.labcorp_order_id);if(!id)return J({error:"Labcorp order id is required."},400);return J(await row(db,id))}
 const DEV_LABCORP_PANELS:Record<string,string[]>={"01109090":["806698"],"393166":["4549490002"],"576898":["PCA-10X3S-LC"],"576899":["4552950001","4552950002","4552950003","4552950004","4552950005","4552950006","4552950007","4552950008","4552950009","4552950010"]};
