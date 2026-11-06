@@ -248,3 +248,27 @@ body[data-page="intake-forms"] .tm-card{overflow:hidden}body[data-page="intake-f
 .tm-order-record-grid .tm-builder-form{align-content:start}
 .tm-order-record-grid .tm-builder-form textarea{min-height:110px;resize:vertical}
 @media(max-width:1100px){.tm-order-record-grid{grid-template-columns:minmax(0,1fr)}.tm-order-record-grid>.two-thirds,.tm-order-record-grid>.one-third{grid-column:1}}
+
+
+/* Result creator and controlled release — scoped page styling */
+body[data-page="result"] .tm-page{padding-bottom:44px}
+body[data-page="result"] .tm-card{min-width:0}
+body[data-page="result"] .tm-card-head{gap:12px;align-items:flex-start}
+body[data-page="result"] .tm-card-head p{max-width:760px;line-height:1.55}
+body[data-page="result"] .tm-builder-form{align-content:start}
+body[data-page="result"] .tm-builder-form textarea{min-height:100px;max-height:220px;resize:vertical;line-height:1.5}
+body[data-page="result"] #publishResult{display:grid;grid-template-columns:minmax(0,1fr);gap:18px;max-width:880px}
+body[data-page="result"] #publishResult>.tm-field,
+body[data-page="result"] #publishResult>.wide{grid-column:1;min-width:0}
+body[data-page="result"] #publishResult .tm-field input[type="email"]{max-width:640px;width:100%;background:#f5f8fd;color:#375779}
+body[data-page="result"] #publishResult textarea{width:100%;min-height:104px;height:112px;max-height:190px}
+body[data-page="result"] #publishResult .tm-check{display:block;padding:13px 15px;border:1px solid #dbe5f0;border-radius:9px;background:#f7f9fd}
+body[data-page="result"] #publishResult .tm-check label{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:12px;margin:0;line-height:1.45;font-size:12px;font-weight:750;letter-spacing:0;text-transform:none;color:#233c5f;cursor:pointer}
+body[data-page="result"] #publishResult .tm-check input[type="checkbox"]{display:block;flex:none;width:18px;height:18px;min-height:18px;max-width:18px;margin:0;padding:0;accent-color:#24467f;cursor:pointer}
+body[data-page="result"] #publishResult .tm-check input[type="checkbox"]:disabled{cursor:not-allowed}
+body[data-page="result"] #publishResult>.tm-actions{display:flex;align-items:center;justify-content:flex-start;gap:12px;margin:0}
+body[data-page="result"] #publishResult>.tm-actions .tm-btn{min-height:44px;padding:11px 20px;font-size:13px;font-weight:800;white-space:normal;text-align:center}
+body[data-page="result"] #publishResult>.tm-actions .tm-btn:disabled{opacity:.65;cursor:not-allowed}
+body[data-page="result"] #publishResult+.tm-release-email-note{max-width:880px;margin:14px 0 0;color:#637792;font-size:12px;line-height:1.55}
+body[data-page="result"] #publishResult :focus-visible{outline:3px solid #8cb1e8;outline-offset:2px}
+@media(max-width:760px){body[data-page="result"] .tm-page{padding:16px 14px 28px}body[data-page="result"] .tm-card-head,body[data-page="result"] .tm-card-body{padding:16px}body[data-page="result"] #publishResult{gap:15px}body[data-page="result"] #publishResult .tm-check{padding:12px}body[data-page="result"] #publishResult>.tm-actions .tm-btn{width:100%}body[data-page="result"] .tm-builder-form{grid-template-columns:minmax(0,1fr)}body[data-page="result"] .tm-builder-form>.wide{grid-column:1}}
