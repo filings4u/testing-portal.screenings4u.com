@@ -114,6 +114,19 @@ Deno.serve(async(req)=>{
     return {profile,orders,testing:customerTesting,donor_passes:[...dedicatedPasses,...legacyDonorPasses],results,documents:flatDocs,shared_documents:privateDocs,document_deliveries:deliveries.data||[],proposals:(proposals.data||[]).map((x:any)=>x.testing_proposals).filter(Boolean)};
   };
 
+  if(action==="official_labcorp_pass_url"){
+    const passId=clean(body.pass_id);
+    if(!/^[0-9a-f-]{36}$/i.test(passId))return J({error:"Invalid donor pass"},400);
+    const row=await db.from("testing_donor_passes").select("id,status,customer_user_id,order_id,metadata").eq("id",passId).eq("customer_user_id",uid).eq("status","issued").maybeSingle();
+    if(row.error)throw row.error;
+    const pass=row.data;
+    if(!pass)return J({error:"Issued donor pass not found for this customer."},404);
+    const bucket=pass.metadata?.official_labcorp_pdf_bucket,path=pass.metadata?.official_labcorp_pdf_path;
+    if(bucket!=="testing-private-documents"||typeof path!=="string"||path!=="donor-passes/"+uid+"/"+pass.id+"/labcorp-registration-"+String(pass.metadata?.official_labcorp_registration||"")+".pdf")return J({error:"Original Labcorp donor pass PDF is not attached."},404);
+    const signed=await db.storage.from(bucket).createSignedUrl(path,120);
+    if(signed.error)throw signed.error;
+    return J({ok:true,url:signed.data.signedUrl,expires_in:120,filename:"Labcorp-Donor-Pass.pdf"});
+  }
   if(action==="context")return J({ok:true,allowed:true,user:{id:uid,email:ud.user.email},access:access.data});
   if(action==="workspace")return J(await buildWorkspace());
   if(action==="update_profile"){
