@@ -2,9 +2,11 @@
 const page=(location.pathname.split('/').pop()||'dashboard.html').toLowerCase();
 const groups=[
  ['Control Center',[['dashboard.html','Dashboard','⌂']]],
+ ['Lab Accounts',[['lab-companies.html','Companies','▣'],['lab-supplies.html','Supplies','▤'],['lab-tracking.html','Tracking','⌁'],['lab-account-numbers.html','Account Numbers','#'],['lab-onboarding.html','Onboarding','✓']]],
  ['Testing Management',[['testing-operations.html','Testing Operations','▶'],['occupational-health.html','Occupational Health','✚'],['cases.html','Cases','▣'],['orders.html','Orders','▤'],['refunds.html','Refunds','↩'],['labcorp-orders.html','Labcorp Orders','◫'],['labcorp-sent.html','Sent Labcorp Tests','✓'],['labcorp-deliveries.html','Labcorp Deliveries','▣'],['labcorp-status-updates.html','Labcorp Statuses','◷'],['labcorp-incoming-results.html','Labcorp Results','✓'],['labcorp-coc-documents.html','Labcorp COC Documents','▤'],['labcorp-validation.html','Labcorp Validation','✓'],['results.html','Results','✓'],['donor-passes.html','Donor Passes','⌁'],['service-requests.html','Service Requests','≡'],['work-orders.html','Work Orders','▣'],['customers.html','Customers & Portal Access','◉'],['providers.html','Providers','◆'],['background-checks.html','Background Checks','▧'],['documents.html','Documents','▤'],['catalog.html','Catalog','▦'],['website.html','Website','◎'],['blog.html','Blog','✎'],['support.html','Support','◉'],['reports.html','Reports','▥'],['settings.html','Settings','⚙']]]
 ];
 const children={
+ 'lab-tracking.html':['lab-tracking-number.html'],
  'testing-operations.html':['testing-case.html','testing-case-schedule.html','testing-donor-pass.html','testing-collection.html','testing-lab-routing.html','testing-mro-review.html','testing-result-release.html','testing-case-events.html'],
  'cases.html':['case-create.html','case.html','case-customer.html','case-documents.html','case-history.html'],
  'refunds.html':['refund-create.html','refund.html'],
