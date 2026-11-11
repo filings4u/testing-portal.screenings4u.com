@@ -51,7 +51,7 @@ Deno.serve(async req=>{
  const action=clean(body?.action,50);
  try{
   if(action==="list_public"||action==="get_public"){
-   let q=db.from("testing_career_jobs").select("id,slug,title,department,location,employment_type,description,requirements").eq("status","published").order("display_order");
+   let q=db.from("testing_career_jobs").select("id,slug,title,department,location,employment_type,description,requirements,detail_sections").eq("status","published").order("display_order");
    if(action==="get_public")q=q.eq("slug",clean(body.slug,100));
    const {data,error}=await q;if(error)throw error;return reply({jobs:data||[]},200,origin);
   }
@@ -62,14 +62,26 @@ Deno.serve(async req=>{
    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||!first||!last||!phone||x.consent!==true)return reply({error:"Complete the required application fields."},400,origin);
    const resume=decodeResume(body.resume_base64,body.resume_file_name);
    if("error" in resume)return reply({error:resume.error},400,origin);
-   const {data:job,error:jobError}=await db.from("testing_career_jobs").select("id,title").eq("id",clean(x.job_id,45)).eq("status","published").maybeSingle();
+   const {data:job,error:jobError}=await db.from("testing_career_jobs").select("id,title,slug").eq("id",clean(x.job_id,45)).eq("status","published").maybeSingle();
    if(jobError)throw jobError;
    if(!job)return reply({error:"This position is not accepting applications."},400,origin);
+   const details=x.application_details&&typeof x.application_details==="object"&&!Array.isArray(x.application_details)?x.application_details:{};
+   if(JSON.stringify(details).length>35000)return reply({error:"Application information exceeds the permitted length."},400,origin);
+   if(job.slug==="specimen-collector"){
+     const required=["zip_code","preferred_employment_type","earliest_start_date","days_available","hours_available","sponsorship_required","prior_collection_experience","willing_training","electronic_signature","signature_date"];
+     if(required.some(k=>!clean(details[k],300)))return reply({error:"Complete all required Specimen Collector questions."},400,origin);
+     if(typeof x.work_authorized!=="boolean")return reply({error:"Select your work authorization."},400,origin);
+     if(!details.acknowledgments||!["accuracy","no_guarantee","verification","screening_consent","privacy_notice"].every(k=>details.acknowledgments[k]===true))return reply({error:"Accept all required application acknowledgments."},400,origin);
+     if(!/^\d{4}-\d{2}-\d{2}$/.test(clean(details.signature_date,20)))return reply({error:"Enter a valid signature date."},400,origin);
+     if(clean(details.electronic_signature,150).toLowerCase()!==clean(first+" "+last,150).toLowerCase())return reply({error:"Sign with your full legal name."},400,origin);
+   }
+   const uploadToken=crypto.randomUUID()+"-"+crypto.randomUUID();
+   const uploadTokenHash=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(uploadToken)).then(b=>Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,"0")).join(""));
    const candidateId=crypto.randomUUID();
    const storagePath=candidateId+"/resume."+resume.ext;
    const uploaded=await db.storage.from(RESUME_BUCKET).upload(storagePath,resume.bytes,{contentType:resume.mime,upsert:false,cacheControl:"0"});
    if(uploaded.error){console.error("Career resume upload error",uploaded.error);return reply({error:"Could not securely save résumé. Please retry."},500,origin)}
-   const inserted=await db.from("testing_career_applications").insert({id:candidateId,job_id:job.id,first_name:first,last_name:last,email,phone,city:clean(x.city,100),state:clean(x.state,100),experience:clean(x.experience,100),availability:clean(x.availability,200),work_authorized:typeof x.work_authorized==="boolean"?x.work_authorized:null,qualifications:clean(x.qualifications,3500),comments:clean(x.comments,2000),consent:true,resume_storage_path:storagePath,resume_file_name:resume.fileName,resume_mime_type:resume.mime,resume_size_bytes:resume.bytes.length});
+   const inserted=await db.from("testing_career_applications").insert({id:candidateId,job_id:job.id,first_name:first,last_name:last,email,phone,city:clean(x.city,100),state:clean(x.state,100),experience:clean(x.experience,100),availability:clean(x.availability,200),work_authorized:typeof x.work_authorized==="boolean"?x.work_authorized:null,qualifications:clean(x.qualifications,3500),comments:clean(x.comments,2000),consent:true,resume_storage_path:storagePath,resume_file_name:resume.fileName,resume_mime_type:resume.mime,resume_size_bytes:resume.bytes.length,application_details:details,electronic_signature:clean(details.electronic_signature,150)||null,signed_at:details.signature_date?new Date(details.signature_date+"T12:00:00Z").toISOString():null,acknowledgments:details.acknowledgments||{},applicant_privacy_notice_version:job.slug==="specimen-collector"?"2026-11-11":null,attachment_upload_token_hash:uploadTokenHash,attachment_upload_expires_at:new Date(Date.now()+30*60*1000).toISOString()});
    if(inserted.error){
     await db.storage.from(RESUME_BUCKET).remove([storagePath]);
     throw inserted.error;
@@ -85,7 +97,26 @@ Deno.serve(async req=>{
      sendCareerMail(db,candidateId,"applicant",email,"We received your application | screenings4u",applicantHtml),
      sendCareerMail(db,candidateId,"admin",adminEmail,"New application: "+job.title+" | screenings4u",adminHtml)
    ]);
-   return reply({ok:true,application_id:candidateId,applicant_email_status:applicantEmail,admin_email_status:adminEmailStatus},200,origin);
+   return reply({ok:true,application_id:candidateId,attachment_upload_token:uploadToken,applicant_email_status:applicantEmail,admin_email_status:adminEmailStatus},200,origin);
+  }
+  if(action==="upload_supporting_document"){
+   const applicationId=clean(body.application_id,45),token=clean(body.upload_token,150),kind=clean(body.document_type,35);
+   if(!/^[0-9a-f-]{36}$/.test(applicationId)||!token||!["collector_training","alcohol_training","cover_letter","additional_qualification"].includes(kind))return reply({error:"Invalid upload request."},400,origin);
+   const {data:application,error:loadError}=await db.from("testing_career_applications").select("id,supporting_documents,attachment_upload_token_hash,attachment_upload_expires_at").eq("id",applicationId).maybeSingle();
+   if(loadError)throw loadError;
+   const digest=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(token)).then(b=>Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,"0")).join(""));
+   if(!application||application.attachment_upload_token_hash!==digest||!application.attachment_upload_expires_at||new Date(application.attachment_upload_expires_at).getTime()<Date.now())return reply({error:"Attachment session expired."},403,origin);
+   const docs=Array.isArray(application.supporting_documents)?application.supporting_documents:[];
+   if(docs.length>=4)return reply({error:"Maximum four supporting documents."},400,origin);
+   const file=decodeResume(body.file_base64,body.file_name);
+   if("error" in file)return reply({error:file.error.replaceAll("Résumé","Document").replaceAll("résumé","document")},400,origin);
+   const docId=crypto.randomUUID(),storagePath=applicationId+"/supporting/"+docId+"."+file.ext;
+   const uploaded=await db.storage.from(RESUME_BUCKET).upload(storagePath,file.bytes,{contentType:file.mime,upsert:false,cacheControl:"0"});
+   if(uploaded.error)return reply({error:"Unable to save document."},500,origin);
+   const record={id:docId,type:kind,file_name:file.fileName,storage_path:storagePath,mime_type:file.mime,size_bytes:file.bytes.length};
+   const saved=await db.from("testing_career_applications").update({supporting_documents:[...docs,record],updated_at:new Date().toISOString()}).eq("id",applicationId);
+   if(saved.error){await db.storage.from(RESUME_BUCKET).remove([storagePath]);throw saved.error}
+   return reply({ok:true,document_id:docId},200,origin);
   }
   const token=(req.headers.get("authorization")||"").replace(/^Bearer\s+/i,"");
   if(!token)return reply({error:"Staff login required."},401,origin);
@@ -101,9 +132,13 @@ Deno.serve(async req=>{
   if(!allowed)return reply({error:"Testing Portal staff access required."},403,origin);
   if(action==="resume_url"){
    const requested=clean(body.id,50);
-   const {data:app,error}=await db.from("testing_career_applications").select("resume_storage_path,resume_file_name").eq("id",requested).maybeSingle();
-   if(error)throw error;if(!app?.resume_storage_path)return reply({error:"No résumé is attached to this application."},404,origin);
-   const signed=await db.storage.from(RESUME_BUCKET).createSignedUrl(app.resume_storage_path,90,{download:app.resume_file_name||"resume"});
+   const {data:app,error}=await db.from("testing_career_applications").select("resume_storage_path,resume_file_name,supporting_documents").eq("id",requested).maybeSingle();
+   if(error)throw error;if(!app)return reply({error:"Application not found."},404,origin);
+   const docId=clean(body.document_id,45),doc=docId?(Array.isArray(app.supporting_documents)?app.supporting_documents:[]).find((x:any)=>x.id===docId):null;
+   if(docId&&!doc)return reply({error:"Document not found."},404,origin);
+   const filePath=doc?.storage_path||app.resume_storage_path,fileName=doc?.file_name||app.resume_file_name||"resume";
+   if(!filePath)return reply({error:"No document found."},404,origin);
+   const signed=await db.storage.from(RESUME_BUCKET).createSignedUrl(filePath,90,{download:fileName});
    if(signed.error)throw signed.error;
    return reply({url:signed.data.signedUrl,expires_in:90},200,origin);
   }
