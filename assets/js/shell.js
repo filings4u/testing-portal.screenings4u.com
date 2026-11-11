@@ -1,4 +1,6 @@
 (()=>{'use strict';
+// Keep the browser title aligned with Workforce branding on every portal page.
+document.title=document.title.replace(/(?:screenings4u\\s+)?Testing Management/gi,'Workforce').replace(/Workforce\\s+Management/gi,'Workforce').replace(/\\bManagement\\b/gi,'Workforce').replace(/Workforce\\s+Workforce/gi,'Workforce');
 const page=(location.pathname.split('/').pop()||'dashboard.html').toLowerCase();
 const groups=[
  ['Control Center',[['dashboard.html','Dashboard','⌂']]],
