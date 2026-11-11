@@ -170,7 +170,7 @@ Deno.serve(async req=>{
   }
   if(action==="send_invitation"){
    const jobId=clean(body.job_id,45),recipient=clean(body.email,255).toLowerCase(),recipientName=clean(body.name,120);
-   if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(recipient))return reply({error:"Enter a valid applicant email address."},400,origin);
+   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipient))return reply({error:"Enter a valid applicant email address."},400,origin);
    if(!/^[0-9a-fA-F-]{36}$/.test(jobId))return reply({error:"Choose a job posting."},400,origin);
    const {data:job,error:jobError}=await db.from("testing_career_jobs").select("id,title,slug,status,location,employment_type").eq("id",jobId).maybeSingle();
    if(jobError)throw jobError;
