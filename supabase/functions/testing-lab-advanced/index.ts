@@ -30,7 +30,29 @@ Deno.serve(async req=>{
    const caseMap=new Map((cases.data||[]).map(x=>[x.id,x]));
    return send({can_edit:edit,requests:(requests.data||[]).map(x=>({...x,customer_email:emails.get(x.customer_user_id)||"",case_number:caseMap.get(x.testing_case_id)?.case_number||"",is_released:!!caseMap.get(x.testing_case_id)?.released_at,case_owned:caseMap.get(x.testing_case_id)?.customer_user_id===x.customer_user_id})),supply_alerts:(low.data||[]).filter(x=>x.estimated_on_hand<=x.reorder_threshold).map(x=>({...x,customer_email:emails.get(x.customer_user_id)||""}))});
   }
+  if(action==="released_cases"){
+   const q=await db.from("testing_cases").select("id,case_number,customer_user_id,released_at").not("released_at","is",null).not("customer_user_id","is",null).order("released_at",{ascending:false}).limit(150);
+   if(q.error)throw q.error;
+   const owners=[...new Set((q.data||[]).map(x=>x.customer_user_id))],emails=new Map<string,string>();
+   await Promise.all(owners.map(async id=>{const x=await db.auth.admin.getUserById(id);if(!x.error)emails.set(id,String(x.data.user?.email||""))}));
+   return send({cases:(q.data||[]).map(x=>({...x,customer_email:emails.get(x.customer_user_id)||""}))});
+  }
   if(!edit)return send({error:"Testing write permissions required"},403);
+  if(action==="upload_ccf"){
+   const id=String(body.testing_case_id||""),base64=String(body.file_base64||""),filename=String(body.filename||"CCF.pdf").replace(/[^A-Za-z0-9 ._()-]/g,"").slice(0,120);
+   if(!uid(id)||!base64||base64.length>8_000_000||!/^[A-Za-z0-9+/=]+$/.test(base64))return send({error:"Valid released case and PDF under 5 MB required"},400);
+   const owned=await db.from("testing_cases").select("id,customer_user_id,released_at").eq("id",id).maybeSingle();
+   if(owned.error)throw owned.error;
+   if(!owned.data||!owned.data.customer_user_id||!owned.data.released_at)return send({error:"Only a released customer-owned case may receive a customer-visible CCF"},403);
+   const bytes=Uint8Array.from(atob(base64),ch=>ch.charCodeAt(0));
+   if(bytes.length<8||bytes.length>5_242_880||new TextDecoder().decode(bytes.slice(0,5))!=="%PDF-")return send({error:"Only PDFs under 5 MB can be released"},400);
+   const location="lab-ccf/"+owned.data.customer_user_id+"/"+id+"/"+crypto.randomUUID()+".pdf";
+   const upload=await db.storage.from("testing-private-documents").upload(location,bytes,{upsert:false,contentType:"application/pdf",cacheControl:"0"});
+   if(upload.error)throw upload.error;
+   const doc=await db.from("testing_case_documents").insert({testing_case_id:id,document_type:"ccf",title:filename.toLowerCase().endsWith(".pdf")?filename:filename+".pdf",storage_bucket:"testing-private-documents",storage_path:location,mime_type:"application/pdf",file_size:bytes.length,visibility:"customer",created_by:user.id,metadata:{source:"testing_lab_advanced",issued_at:new Date().toISOString()}}).select("id,testing_case_id").single();
+   if(doc.error){await db.storage.from("testing-private-documents").remove([location]);throw doc.error}
+   return send({ok:true,document:doc.data});
+  }
   if(action==="review"){
    const id=String(body.id||""),decision=String(body.decision||""),notes=String(body.staff_notes||"").trim().slice(0,1500);
    if(!uid(id)||!["approved","declined"].includes(decision))return send({error:"Invalid decision"},400);
