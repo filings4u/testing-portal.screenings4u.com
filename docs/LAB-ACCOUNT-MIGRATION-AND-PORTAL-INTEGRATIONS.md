@@ -34,7 +34,16 @@ These screens share `assets/js/lab-module.js` and `assets/css/lab-account-admin.
 ## Deployment and validation requirements
 1. Confirm that the authenticated Testing Portal staff session is authorized for all four lab management functions, including form submission updates, lab account saves, fulfillment, and provisioning.
 2. Confirm that Workforce Management can load view-only purchase data; optional cross-business metrics should be unavailable rather than expose unauthorized sensitive records.
-3. Deploy updated `lab-account-supplies` Edge Function from the Workforce repo so administrative supply emails link to the Testing Portal.
-4. Customer-submitted supply-request review still links to the existing `app.screenings4u.com/ic-supply-management.html` workflow. This needs its own complete management migration, with staff access checks, before removing the old endpoint.
+3. **Deployed:** updated `lab-account-supplies` Edge Function version 20 links staff to Testing Portal.
+4. **Deployed:** customer-submitted Lab Account supply-request review is available at `testing-portal.screenings4u.com/lab-supply-requests.html` with testing-staff authorization. Independent Contractor supply operations remain separate.
 5. Test full integration with the six consumer portals for entitlement-based reads, role boundaries, new orders, shipment status, customer notices, and results release. These integrations have **not** been verified end to end in this migration.
 6. Do not migrate backend secrets into front-end JS or duplicate customer tables. Preserve authoritative identities and server-side access control.
+
+## November 10 implementation update
+- Workforce branding replaces visible "Management" labels in the shared Testing and Workforce portal shells. Browser titles are normalized at runtime; legacy file names, route names and Supabase function slugs remain unchanged for compatibility.
+- The customer-request review screen is now `lab-supply-requests.html`. It uses the dedicated `testing-lab-supply-requests` Edge Function; this function is deployed and active. The function checks authenticated active staff, an active testing-business grant, and edit-level grants before transitions, scopes requests to Lab Account users, requires carrier/tracking when shipping, and records customer notification delivery attempts.
+- `lab-account-supplies` Edge Function was deployed as version 20 with its administrative email link pointing at Testing Portal. Customer-facing email links continue to use the Lab Account site.
+- Live database consistency audit: 2 supply requests and 2 lab shipments; 3 Lab Account purchases; 30 testing cases. No orphaned supply lines, lab shipments, or case-to-`orders` references. The 16 case order IDs initially absent from `testing_orders` reference `orders`, the actual declared foreign-key target, and were not orphaned.
+- All six repositories were located and checked; each uses the same Supabase project, including `lab-account` via its root-level `config.js`. This confirms a shared backing database, not end-to-end portal behavior.
+- **Outstanding authenticated verification:** staff create/edit/approve and save operations across migrated lab pages; unauthorized staff denial behavior; customer order submission and notification receipt; customer visibility of only released results; C/TPA, owner-operator, NON-DOT employer, customers, and Lab Account complete journeys.
+- The existing independent-contractor supply workflow is intentionally preserved, because it also serves non-lab contractor operations. Only lab customer request review was transferred to the Testing Portal.
