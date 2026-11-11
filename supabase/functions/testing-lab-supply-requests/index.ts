@@ -43,7 +43,7 @@ Deno.serve(async(req:Request)=>{
    if(!current.data||!allowedIds.includes(current.data.contractor_user_id))return reply({error:"Supply request not found"},404);
    if(current.data.status!==previous)return reply({error:"Request changed; reload before updating"},409);
    const carrier=clean(body.carrier,100),tracking=clean(body.tracking_number,160),notes=clean(body.notes,1000);
-   if(target==="shipped"&&!(carrier||current.data.carrier&&tracking||current.data.tracking_number))return reply({error:"Carrier and tracking number required"},400);
+   if(target==="shipped"&&(!(carrier||current.data.carrier)||!(tracking||current.data.tracking_number)))return reply({error:"Carrier and tracking number required"},400);
    const patch:any={status:target,updated_at:new Date().toISOString()};
    if(notes)patch.notes=(clean(current.data.notes,3000)+(current.data.notes?"\n":"")+new Date().toISOString()+" Workforce: "+notes).slice(0,5000);
    if(target==="shipped"){patch.carrier=carrier||current.data.carrier;patch.tracking_number=tracking||current.data.tracking_number;}
