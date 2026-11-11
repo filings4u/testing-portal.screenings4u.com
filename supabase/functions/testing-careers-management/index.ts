@@ -67,22 +67,19 @@ Deno.serve(async req=>{
    if(!job)return reply({error:"This position is not accepting applications."},400,origin);
    const details=x.application_details&&typeof x.application_details==="object"&&!Array.isArray(x.application_details)?x.application_details:{};
    if(JSON.stringify(details).length>35000)return reply({error:"Application information exceeds the permitted length."},400,origin);
-   if(job.slug==="specimen-collector"){
-     const required=["zip_code","preferred_employment_type","earliest_start_date","days_available","hours_available","sponsorship_required","prior_collection_experience","willing_training","electronic_signature","signature_date"];
-     if(required.some(k=>!clean(details[k],300)))return reply({error:"Complete all required Specimen Collector questions."},400,origin);
-     if(typeof x.work_authorized!=="boolean")return reply({error:"Select your work authorization."},400,origin);
-     if(!details.acknowledgments||!["accuracy","no_guarantee","verification","screening_consent","privacy_notice"].every(k=>details.acknowledgments[k]===true))return reply({error:"Accept all required application acknowledgments."},400,origin);
-     if(!/^\d{4}-\d{2}-\d{2}$/.test(clean(details.signature_date,20)))return reply({error:"Enter a valid signature date."},400,origin);
-     if(clean(details.electronic_signature,150).toLowerCase()!==clean(first+" "+last,150).toLowerCase())return reply({error:"Sign with your full legal name."},400,origin);
-   }
-   if(job.slug==="janitorial-associate"){
-     const required=["earliest_start_date","days_available","hours_available","sponsorship_required","prior_cleaning_experience","willing_training","schedule_compatibility","essential_duties","electronic_signature","signature_date"];
-     if(required.some(k=>!clean(details[k],300)))return reply({error:"Complete all required Janitorial Associate application fields."},400,origin);
-     if(typeof x.work_authorized!=="boolean")return reply({error:"Select your work authorization."},400,origin);
+   if(job.slug==="specimen-collector"||job.slug==="janitorial-associate"){
+     const collector=job.slug==="specimen-collector";
+     const required=collector?
+       ["zip_code","preferred_employment_type","earliest_start_date","days_available","hours_available","sponsorship_required","prior_collection_experience","willing_training","electronic_signature","signature_date"]:
+       ["earliest_start_date","days_available","hours_available","sponsorship_required","prior_cleaning_experience","willing_training","schedule_compatibility","essential_duties","electronic_signature","signature_date"];
+     const missing=required.filter(k=>!clean(details[k],300));
+     if(typeof x.work_authorized!=="boolean")missing.push("work_authorized");
      const acknowledgments=details.acknowledgments||{};
-     if(!["accuracy","no_guarantee","verification","screening_consent","contact_consent","privacy_notice"].every(k=>acknowledgments[k]===true))return reply({error:"Accept all required applicant acknowledgments."},400,origin);
-     if(!/^\d{4}-\d{2}-\d{2}$/.test(clean(details.signature_date,20)))return reply({error:"Enter a valid signature date."},400,origin);
-     if(clean(details.electronic_signature,150).toLowerCase()!==clean(first+" "+last,150).toLowerCase())return reply({error:"Sign with your full legal name."},400,origin);
+     const expected=collector?["accuracy","no_guarantee","verification","screening_consent","privacy_notice"]:["accuracy","no_guarantee","verification","screening_consent","contact_consent","privacy_notice"];
+     for(const key of expected)if(acknowledgments[key]!==true)missing.push("ack_"+key);
+     if(!/^\d{4}-\d{2}-\d{2}$/.test(clean(details.signature_date,20))&&!missing.includes("signature_date"))missing.push("signature_date");
+     if(clean(details.electronic_signature,150).toLowerCase()!==clean(first+" "+last,150).toLowerCase()&&!missing.includes("electronic_signature"))missing.push("electronic_signature");
+     if(missing.length)return reply({error:"Please correct the highlighted fields before submitting.",fields:missing},400,origin);
    }
    const uploadToken=crypto.randomUUID()+"-"+crypto.randomUUID();
    const uploadTokenHash=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(uploadToken)).then(b=>Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,"0")).join(""));
