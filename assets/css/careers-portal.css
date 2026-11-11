@@ -166,3 +166,25 @@ body[data-page^="career-"] .tm-field textarea{max-width:100%;min-width:0}
  body[data-page^="career-"] .tm-table th,
  body[data-page^="career-"] .tm-table td{padding:12px 14px}
 }
+
+/* Staff-controlled job application invitation sender. */
+body[data-page="career-jobs"] #careerInvitationPanel{scroll-margin-top:25px}
+body[data-page="career-jobs"] .tm-career-invite-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 20px}
+body[data-page="career-jobs"] .tm-career-invite-grid .tm-field{min-width:0}
+body[data-page="career-jobs"] .tm-career-invite-grid .tm-field select,
+body[data-page="career-jobs"] .tm-career-invite-grid .tm-field input{width:100%;max-width:100%;min-height:46px;background:#fff}
+body[data-page="career-jobs"] .tm-career-invite-grid .tm-field:first-child{grid-column:1 / -1}
+body[data-page="career-jobs"] .tm-career-invite-footer{display:flex;align-items:center;gap:15px;flex-wrap:wrap;margin-top:20px}
+body[data-page="career-jobs"] .tm-career-invite-footer .tm-btn{min-height:44px;padding:10px 20px}
+body[data-page="career-jobs"] .tm-career-invite-info{font-size:12px;color:var(--muted);line-height:1.55;max-width:650px}
+body[data-page="career-jobs"] #careerInviteMessage:not(:empty){margin-top:16px}
+body[data-page="career-jobs"] .tm-career-invite-success{padding:12px 14px;border-radius:8px;border:1px solid #b7dec7;background:#effaf3;color:#166534;font-size:13px;font-weight:700}
+body[data-page="career-jobs"] .tm-career-invite-status{display:inline-block;padding:4px 9px;border-radius:7px;background:#f0f3f8;color:#34475f;font-size:12px;font-weight:800}
+body[data-page="career-jobs"] .tm-career-invite-status.sent{color:#166534;background:#eaf7ef}
+body[data-page="career-jobs"] .tm-career-invite-status.failed{color:#a11c2c;background:#fff0ef}
+@media(max-width:760px){
+ body[data-page="career-jobs"] .tm-career-invite-grid{grid-template-columns:1fr}
+ body[data-page="career-jobs"] .tm-career-invite-grid .tm-field:first-child{grid-column:1}
+ body[data-page="career-jobs"] .tm-career-invite-footer{align-items:stretch;flex-direction:column}
+ body[data-page="career-jobs"] .tm-career-invite-footer .tm-btn{width:100%}
+}
