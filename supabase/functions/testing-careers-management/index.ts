@@ -1,6 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2.57.0";
 const ORIGINS=new Set(["https://screenings4u.com","https://www.screenings4u.com","https://testing-portal.screenings4u.com"]);
-function reply(body,status=200,origin=""){return new Response(JSON.stringify(body),{status,headers:{"content-type":"application/json","access-control-allow-origin":ORIGINS.has(origin)?origin:"https://screenings4u.com","access-control-allow-methods":"POST, OPTIONS","access-control-allow-headers":"authorization,apikey,content-type","vary":"Origin"}})}
+function reply(body,status=200,origin=""){return new Response(JSON.stringify(body),{status,headers:{"content-type":"application/json","access-control-allow-origin":ORIGINS.has(origin)?origin:"https://screenings4u.com","access-control-allow-methods":"POST, OPTIONS","access-control-allow-headers":"authorization,apikey,content-type,x-client-info,x-supabase-api-version,x-supabase-client-platform,x-supabase-client-platform-version,x-supabase-client-runtime,x-supabase-client-runtime-version","vary":"Origin"}})}
 const clean=(x,max=2000)=>String(x??"").trim().slice(0,max);
 const BRAND_LOGO="https://elpbnytpciqnbexiaebp.supabase.co/storage/v1/object/public/enterprise_branding/logo-screenings4u.png";
 const RESUME_BUCKET="testing-career-resumes";
