@@ -21,20 +21,11 @@ Deno.serve(async req=>{
   const data=await req.json().catch(()=>({}));
   const action=String(data.action||"list");
   if(action==="list"){
-   const q=await db.from("lab_portal_upgrade_requests").select("id,user_id,current_plan_sku,target_plan_sku,status,created_at,updated_at").order("created_at",{ascending:false}).limit(200);
+   const q=await db.from("lab_portal_upgrade_requests").select("id,user_id,current_plan_sku,target_plan_sku,status,created_at,updated_at,order_id").order("created_at",{ascending:false}).limit(200);
    if(q.error)throw q.error;
    const users=[...new Set((q.data||[]).map(x=>x.user_id))],names=new Map();
    await Promise.all(users.map(async id=>{const a=await db.auth.admin.getUserById(id);if(!a.error)names.set(id,a.data.user?.email||"");}));
    return out({requests:(q.data||[]).map(x=>({...x,customer_email:names.get(x.user_id)||null}))});
-  }
-  if(action==="mark_reviewed"){
-   if(!["admin","manager","editor"].includes(String(access.data.access_level||"").toLowerCase()))return out({error:"Testing editing access required"},403);
-   const id=String(data.id||"");
-   if(!/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/i.test(id))return out({error:"Invalid request"},400);
-   const change=await db.from("lab_portal_upgrade_requests").update({status:"quoted",updated_at:new Date().toISOString()}).eq("id",id).eq("status","requested").select("id,status").maybeSingle();
-   if(change.error)throw change.error;
-   if(!change.data)return out({error:"This request has already been reviewed or changed"},409);
-   return out({ok:true,status:change.data.status});
   }
   return out({error:"Unsupported action"},400);
  }catch(e){console.error("testing-lab-plan-upgrades",e);return out({error:"Unable to access upgrade requests"},500)}
