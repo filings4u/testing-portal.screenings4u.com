@@ -1,5 +1,5 @@
-/* screenings4u management portal — lab account administration */
-.lab-wrap{max-width:1480px!important;margin:0 auto!important;padding:28px 30px 60px!important;font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif!important;color:#17355d!important}
+/* screenings4u testing portal — lab account pages */
+.lab-wrap{max-width:1450px!important;margin:0 auto!important;padding:28px 30px 60px!important;font-family:Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif!important;color:#17355d!important}
 .lab-wrap *{box-sizing:border-box}.lab-wrap>h1{font-size:30px!important;letter-spacing:-.035em;font-weight:800;margin:0 0 7px!important}.lab-wrap>p[role=status]{color:#647792;font-size:13px;margin:0 0 20px}
 .lab-panel{background:#fff;border:1px solid #dbe5f2;border-radius:14px;padding:22px 23px;margin:18px 0;box-shadow:0 5px 19px rgba(20,53,92,.045);overflow:visible}
 .lab-panel h2{font-size:19px;font-weight:800;margin:0 0 17px;color:#19385f}.lab-toolbar{display:flex;flex-wrap:wrap;align-items:end;gap:12px;padding-bottom:19px}.lab-toolbar label{display:flex;flex-direction:column;gap:7px;color:#4d6480;font-size:12px;font-weight:750}.lab-search-label{flex:1 1 320px}.lab-status-label{flex:0 1 185px}.lab-toolbar input,.lab-toolbar select,.lab-wrap input,.lab-wrap select,.lab-wrap textarea{background:#fff;border:1px solid #cad9e9;border-radius:8px;min-height:42px;padding:10px 12px;color:#17355d;font:inherit}.lab-toolbar input:focus,.lab-toolbar select:focus,.lab-wrap input:focus{outline:3px solid #ff6a0028;border-color:#ff6a00}.lab-table-scroll{width:100%;overflow-x:auto}.lab-table{width:100%;border-collapse:collapse;min-width:760px}.lab-table th{font-size:11px;letter-spacing:.045em;text-transform:uppercase;color:#4e6480;background:#f4f7fc;font-weight:800;padding:14px 12px;text-align:left}.lab-table td{border-bottom:1px solid #e2eaf3;padding:14px 12px;font-size:13px;line-height:1.45;vertical-align:middle}.lab-table tbody tr:hover{background:#fafcff}.lab-table tbody tr:last-child td{border-bottom:0}.lab-table .lab-empty{text-align:center;color:#718098;padding:35px}
@@ -7,7 +7,7 @@
 @media(max-width:720px){.lab-wrap{padding:18px 13px 38px!important}.lab-panel{padding:15px!important}.lab-toolbar>*{flex:1 1 100%!important}.lab-table{min-width:680px}.lab-wrap>h1{font-size:24px!important}.lab-detail-header{align-items:flex-start;flex-direction:column}}
 
 /* C/TPA account assignment — responsive management layout */
-.lab-wrap{max-width:1530px!important}
+.lab-wrap{max-width:1450px!important}
 #assignmentCtpa{width:100%;max-width:620px;display:block;margin-top:8px;font-size:14px}
 .lab-account-editor{border:1px solid #d8e4f2;background:#f9fbff;border-radius:12px;padding:18px;margin:14px 0}
 .lab-account-editor .lab-edit-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
@@ -133,5 +133,3 @@ body[data-lab-page="tracking-form"] .lab-module-tabs a[href="lab-tracking.html"]
 .lab-module-feedback.lab-feedback-success{background:#e8f7ee;border:1px solid #bbdfc8;border-radius:9px;color:#17603b;padding:13px 16px;margin:0 0 16px;font-size:13px;font-weight:750}
 .lab-module-feedback.error{background:#fff0ed;border:1px solid #e9c1ba;border-radius:9px;padding:13px 16px;margin:0 0 16px}
 
-/* Workforce visual system for Testing Management lab account pages */
-.lab-wrap{color:#01122f!important;max-width:1450px!important}.lab-module-head{background:linear-gradient(115deg,#01122f,#193d71)!important}.lab-eyebrow{color:#fdc102!important}.lab-wrap .lab-primary,.lab-panel button.lab-primary{background:#fdc102!important;border-color:#fdc102!important;color:#01122f!important}.lab-wrap .lab-primary:hover,.lab-panel button.lab-primary:hover{background:#e6af00!important}.lab-module-tabs a.active{border-color:#fdc102!important;color:#01122f!important}.lab-panel h2{color:#01122f!important}.lab-wrap input:focus,.lab-wrap select:focus{outline-color:#fdc102!important;border-color:#dbad00!important}
