@@ -75,13 +75,22 @@ Deno.serve(async req=>{
      if(!/^\d{4}-\d{2}-\d{2}$/.test(clean(details.signature_date,20)))return reply({error:"Enter a valid signature date."},400,origin);
      if(clean(details.electronic_signature,150).toLowerCase()!==clean(first+" "+last,150).toLowerCase())return reply({error:"Sign with your full legal name."},400,origin);
    }
+   if(job.slug==="janitorial-associate"){
+     const required=["earliest_start_date","days_available","hours_available","sponsorship_required","prior_cleaning_experience","willing_training","schedule_compatibility","essential_duties","electronic_signature","signature_date"];
+     if(required.some(k=>!clean(details[k],300)))return reply({error:"Complete all required Janitorial Associate application fields."},400,origin);
+     if(typeof x.work_authorized!=="boolean")return reply({error:"Select your work authorization."},400,origin);
+     const acknowledgments=details.acknowledgments||{};
+     if(!["accuracy","no_guarantee","verification","screening_consent","contact_consent","privacy_notice"].every(k=>acknowledgments[k]===true))return reply({error:"Accept all required applicant acknowledgments."},400,origin);
+     if(!/^\d{4}-\d{2}-\d{2}$/.test(clean(details.signature_date,20)))return reply({error:"Enter a valid signature date."},400,origin);
+     if(clean(details.electronic_signature,150).toLowerCase()!==clean(first+" "+last,150).toLowerCase())return reply({error:"Sign with your full legal name."},400,origin);
+   }
    const uploadToken=crypto.randomUUID()+"-"+crypto.randomUUID();
    const uploadTokenHash=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(uploadToken)).then(b=>Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,"0")).join(""));
    const candidateId=crypto.randomUUID();
    const storagePath=candidateId+"/resume."+resume.ext;
    const uploaded=await db.storage.from(RESUME_BUCKET).upload(storagePath,resume.bytes,{contentType:resume.mime,upsert:false,cacheControl:"0"});
    if(uploaded.error){console.error("Career resume upload error",uploaded.error);return reply({error:"Could not securely save résumé. Please retry."},500,origin)}
-   const inserted=await db.from("testing_career_applications").insert({id:candidateId,job_id:job.id,first_name:first,last_name:last,email,phone,city:clean(x.city,100),state:clean(x.state,100),experience:clean(x.experience,100),availability:clean(x.availability,200),work_authorized:typeof x.work_authorized==="boolean"?x.work_authorized:null,qualifications:clean(x.qualifications,3500),comments:clean(x.comments,2000),consent:true,resume_storage_path:storagePath,resume_file_name:resume.fileName,resume_mime_type:resume.mime,resume_size_bytes:resume.bytes.length,application_details:details,electronic_signature:clean(details.electronic_signature,150)||null,signed_at:details.signature_date?new Date().toISOString():null,acknowledgments:details.acknowledgments||{},applicant_privacy_notice_version:job.slug==="specimen-collector"?"2026-11-11":null,attachment_upload_token_hash:uploadTokenHash,attachment_upload_expires_at:new Date(Date.now()+30*60*1000).toISOString()});
+   const inserted=await db.from("testing_career_applications").insert({id:candidateId,job_id:job.id,first_name:first,last_name:last,email,phone,city:clean(x.city,100),state:clean(x.state,100),experience:clean(x.experience,100),availability:clean(x.availability,200),work_authorized:typeof x.work_authorized==="boolean"?x.work_authorized:null,qualifications:clean(x.qualifications,3500),comments:clean(x.comments,2000),consent:true,resume_storage_path:storagePath,resume_file_name:resume.fileName,resume_mime_type:resume.mime,resume_size_bytes:resume.bytes.length,application_details:details,electronic_signature:clean(details.electronic_signature,150)||null,signed_at:details.signature_date?new Date().toISOString():null,acknowledgments:details.acknowledgments||{},applicant_privacy_notice_version:["specimen-collector","janitorial-associate"].includes(job.slug)?"2024-01-01":null,attachment_upload_token_hash:uploadTokenHash,attachment_upload_expires_at:new Date(Date.now()+30*60*1000).toISOString()});
    if(inserted.error){
     await db.storage.from(RESUME_BUCKET).remove([storagePath]);
     throw inserted.error;
