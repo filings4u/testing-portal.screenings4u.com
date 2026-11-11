@@ -85,7 +85,7 @@ Deno.serve(async(req)=>{
     const [profile,orders,cases,passes,deliveries,proposals]=await Promise.all([
       profileRow(),orderRows(),caseRows(),
       db.from("testing_donor_passes").select("*").eq("status","issued").or(`customer_user_id.eq.${uid}${ud.user.email&&ud.user.email_confirmed_at?`,and(customer_user_id.is.null,donor_email.ilike.${ud.user.email.replace(/[%*,()]/g,"")})`:""}`).order("created_at",{ascending:false}),
-      db.from("testing_document_deliveries").select("*").eq("recipient_user_id",uid).eq("portal_status","sent").order("created_at",{ascending:false}),
+      db.from("testing_document_deliveries").select("*").eq("recipient_user_id",uid).in("portal_status",["sent","viewed"]).order("created_at",{ascending:false}),
       db.from("testing_proposal_deliveries").select("*,testing_proposals(*,testing_proposal_sections(*),testing_proposal_items(*))").eq("recipient_user_id",uid).eq("portal_status","sent").order("created_at",{ascending:false})
     ]);
     if(passes.error)throw passes.error;if(deliveries.error)throw deliveries.error;if(proposals.error)throw proposals.error;
@@ -217,10 +217,10 @@ Deno.serve(async(req)=>{
   }
   if(action==="shared_document_url"){
     const id=clean(body.document_id);if(!id)return J({error:"Document is required."},400);
-    const delivery=await db.from("testing_document_deliveries").select("id").eq("source_type","private_document").eq("source_id",id).eq("recipient_user_id",uid).eq("portal_status","sent").maybeSingle();if(delivery.error)throw delivery.error;if(!delivery.data)return J({error:"Document not available."},403);
+    const delivery=await db.from("testing_document_deliveries").select("id,portal_status").eq("source_type","private_document").eq("source_id",id).eq("recipient_user_id",uid).in("portal_status",["sent","viewed"]).maybeSingle();if(delivery.error)throw delivery.error;if(!delivery.data)return J({error:"Document not available."},403);
     const d=await db.from("testing_private_documents").select("*").eq("id",id).is("archived_at",null).maybeSingle();if(d.error)throw d.error;if(!d.data)return J({error:"Document not found."},404);
     const s=await db.storage.from(d.data.storage_bucket).createSignedUrl(d.data.storage_path,300);if(s.error)throw s.error;
-    await db.from("testing_document_deliveries").update({portal_status:"viewed",portal_viewed_at:new Date().toISOString()}).eq("id",delivery.data.id);
+    if(delivery.data.portal_status==="sent")await db.from("testing_document_deliveries").update({portal_status:"viewed",portal_viewed_at:new Date().toISOString()}).eq("id",delivery.data.id).eq("portal_status","sent");
     return J({url:s.data.signedUrl,title:d.data.title||"screenings4u-document"});
   }
   if(action==="proposal_viewed"){const id=clean(body.proposal_id);if(!id)return J({error:"Proposal is required."},400);const q=await db.from("testing_proposal_deliveries").update({portal_status:"viewed",portal_viewed_at:new Date().toISOString()}).eq("proposal_id",id).eq("recipient_user_id",uid).eq("portal_status","sent");if(q.error)throw q.error;return J({ok:true});}
