@@ -1,6 +1,6 @@
 (()=>{'use strict';
 const config=Object.freeze({
- portalName:'Workforce',portalHost:'testing-portal.screenings4u.com',managedWebsite:'https://screenings4u.com',managedCustomerPortal:'https://customers.screenings4u.com',
+ portalName:'Screenings4u Testing Management',portalHost:'testing-portal.screenings4u.com',managedWebsite:'https://screenings4u.com',managedCustomerPortal:'https://customers.screenings4u.com',
  supabaseUrl:'https://elpbnytpciqnbexiaebp.supabase.co',supabaseAnonKey:'sb_publishable_xVI6Mjkk1bNVMGHZCPuK6w_8FSHKdkC',
  contextFunction:'testing-management-context',readFunction:'testing-management-read',operationsFunction:'testing-operations-management',caseFunction:'testing-case-management',orderFunction:'testing-order-management',resultFunction:'testing-result-management',donorPassFunction:'testing-donor-pass-management',serviceRequestFunction:'testing-service-request-management',workOrderFunction:'testing-work-order-management',customerFunction:'testing-customer-management',providerFunction:'testing-provider-management',backgroundCheckFunction:'testing-background-check-management',catalogFunction:'testing-catalog-management',websiteFunction:'testing-website-management',blogFunction:'testing-blog-management',supportFunction:'testing-support-management',reportsFunction:'testing-reports-management',settingsFunction:'testing-settings-management',labcorpOrderFunction:'testing-labcorp-order-management',documentFunction:'testing-document-management',storageKey:'s4u-testing-management-session'});
 window.TESTING_PORTAL_CONFIG=config;
