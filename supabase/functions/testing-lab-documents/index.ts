@@ -50,7 +50,13 @@ Deno.serve(async(req)=>{
   if(!customer.email_confirmed_at)return out({error:"Customer must verify email before documents are shared"},403);
   const entitlement=await db.from("testing_customer_portal_access").select("status").eq("user_id",customer.id).maybeSingle();
   if(entitlement.error)throw entitlement.error;
-  if(entitlement.data?.status!=="active")return out({error:"Customer Lab Account is not active"},403);
+  if(entitlement.data?.status!=="active")return out({error:"Customer portal access is not active"},403);
+  const [intakes,grant]=await Promise.all([
+   db.from("lab_account_intakes").select("id").or("customer_user_id.eq."+customer.id+",customer_email.eq."+email.replace(/[^a-z0-9@._+\\-]/g,"")).limit(1),
+   db.from("testing_customer_portal_access").select("metadata").eq("user_id",customer.id).maybeSingle()
+  ]);
+  if(intakes.error||grant.error)throw intakes.error||grant.error;
+  if(!intakes.data?.length&&grant.data?.metadata?.lab_account_customer_test_access!==true&&grant.data?.metadata?.lab_account_customer_preview!==true)return out({error:"This customer has no verified Lab Account association"},403);
   const title=String(body.title||"").trim().slice(0,180),description=String(body.description||"").trim().slice(0,1000);
   const category=String(body.category||"");
   if(title.length<3||!["account","how_to","compliance","supplies"].includes(category))return out({error:"Title and document category required"},400);
