@@ -59,7 +59,7 @@ Deno.serve(async req=>{
    const x=body.application||{};
    if(clean(x.website))return reply({ok:true},200,origin);
    const email=clean(x.email,255),first=clean(x.first_name,100),last=clean(x.last_name,100),phone=clean(x.phone,50);
-   if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)||!first||!last||!phone||x.consent!==true)return reply({error:"Complete the required application fields."},400,origin);
+   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||!first||!last||!phone||x.consent!==true)return reply({error:"Complete the required application fields."},400,origin);
    const resume=decodeResume(body.resume_base64,body.resume_file_name);
    if("error" in resume)return reply({error:resume.error},400,origin);
    const {data:job,error:jobError}=await db.from("testing_career_jobs").select("id,title").eq("id",clean(x.job_id,45)).eq("status","published").maybeSingle();
