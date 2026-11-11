@@ -35,6 +35,7 @@ Deno.serve(async(req:Request)=>{
    return reply({orders:(orders.data||[]).map((x:any)=>({...x,customer_email:emails.get(x.contractor_user_id)||null})),total:(orders.data||[]).length});
   }
   if(action==="transition"){
+   if(!["admin","manager","editor"].includes(String(access.data.access_level||"").toLowerCase()))return reply({error:"Workforce testing edit permission required"},403);
    if(!uuid(body.id))return reply({error:"Invalid request identifier"},400);
    const target=clean(body.status,25),previous=clean(body.previous_status,25);
    if(!previous||!(transitions[previous]||[]).includes(target))return reply({error:"Invalid supply workflow transition"},400);
