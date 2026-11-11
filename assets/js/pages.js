@@ -6,7 +6,7 @@ async function api(slug,body){return window.TestingAuth.invoke(slug,body)}
 async function ops(action,extra={}){return api(window.TESTING_PORTAL_CONFIG.operationsFunction,{action,...extra})}
 async function cases(action,extra={}){return api(window.TESTING_PORTAL_CONFIG.caseFunction,{action,...extra})}
 async function read(action,extra={}){return api(window.TESTING_PORTAL_CONFIG.readFunction,{action,...extra})}
-function head(title,desc,actions=''){return `<div class="tm-page-head"><div><span class="tm-kicker">WORKFORCE TESTING</span><h1>${esc(title)}</h1><p>${esc(desc)}</p></div>${actions?`<div class="tm-actions">${actions}</div>`:''}</div>`}
+function head(title,desc,actions=''){return `<div class="tm-page-head"><div><span class="tm-kicker">SCREENINGS4U TESTING</span><h1>${esc(title)}</h1><p>${esc(desc)}</p></div>${actions?`<div class="tm-actions">${actions}</div>`:''}</div>`}
 function card(title,desc,body){return `<section class="tm-card"><div class="tm-card-head"><div><h2>${esc(title)}</h2>${desc?`<p>${esc(desc)}</p>`:''}</div></div><div class="tm-card-body">${body}</div></section>`}
 function table(headers,rows,empty='No records found.'){return `<div class="tm-table-wrap"><table class="tm-table"><thead><tr>${headers.map(x=>`<th>${esc(x)}</th>`).join('')}</tr></thead><tbody>${rows||`<tr><td colspan="${headers.length}" class="tm-empty">${esc(empty)}</td></tr>`}</tbody></table></div>`}
 function field(label,name,value='',type='text',extra=''){return `<div class="tm-field"><label for="${name}">${esc(label)}</label><input id="${name}" name="${name}" type="${type}" value="${esc(value??'')}" ${extra}></div>`}
