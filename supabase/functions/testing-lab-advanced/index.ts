@@ -53,6 +53,52 @@ Deno.serve(async req=>{
    if(doc.error){await db.storage.from("testing-private-documents").remove([location]);throw doc.error}
    return send({ok:true,document:doc.data});
   }
+  if(action==="deliver_portal"){
+   const id=String(body.id||"");if(!uid(id))return send({error:"Valid delivery request required"},400);
+   const found=await db.from("lab_portal_result_deliveries").select("id,customer_user_id,testing_case_id,recipient_email,recipient_name,status,staff_notes").eq("id",id).maybeSingle();
+   if(found.error)throw found.error;
+   const request=found.data;
+   if(!request||request.status!=="approved"||!request.staff_notes||request.staff_notes.trim().length<10)return send({error:"This recipient must have documented staff authorization before delivery"},409);
+   const caseResult=await db.from("testing_cases").select("id,case_number,customer_user_id,released_at").eq("id",request.testing_case_id).eq("customer_user_id",request.customer_user_id).maybeSingle();
+   if(caseResult.error)throw caseResult.error;
+   if(!caseResult.data?.released_at)return send({error:"The requested MRO result is not released to this Lab Account"},403);
+   const profiles=await db.from("user_profiles").select("id,email").ilike("email",request.recipient_email).limit(3);
+   if(profiles.error)throw profiles.error;
+   if(profiles.data?.length!==1)return send({error:"The authorized recipient must have one verified customer portal account. Configure that account before delivery."},409);
+   const recipient=profiles.data[0];
+   const identified=await db.auth.admin.getUserById(recipient.id);
+   if(identified.error||!identified.data.user?.email_confirmed_at||String(identified.data.user.email||"").toLowerCase()!==String(request.recipient_email||"").toLowerCase())return send({error:"The recipient account email is not verified"},403);
+   const active=await db.from("testing_customer_portal_access").select("status").eq("user_id",recipient.id).maybeSingle();
+   if(active.error)throw active.error;
+   if(!["active","enabled"].includes(String(active.data?.status||"").toLowerCase()))return send({error:"Recipient must have active Testing Customer portal access"},409);
+   const documents=await db.from("testing_case_documents").select("id,title,document_type,storage_bucket,storage_path,mime_type,file_size,visibility").eq("testing_case_id",request.testing_case_id).eq("document_type","mro_report").eq("visibility","customer").is("archived_at",null).order("created_at",{ascending:false}).limit(1);
+   if(documents.error)throw documents.error;
+   const report=documents.data?.[0];
+   if(!report||!report.storage_path||!["testing-documents","testing-private-documents"].includes(report.storage_bucket))return send({error:"Released customer-visible MRO PDF is not attached to this case"},409);
+   const existing=await db.from("testing_document_deliveries").select("id").eq("recipient_user_id",recipient.id).contains("metadata",{lab_delivery_request_id:id}).limit(1);
+   if(existing.error)throw existing.error;
+   if(existing.data?.length)return send({error:"This request has already been sent to the verified recipient. Refresh to reconcile status."},409);
+   const doc=await db.from("testing_private_documents").insert({title:"Released MRO Report — "+(caseResult.data.case_number||"Testing case"),description:"Authorized result delivery through the customer portal",category:"lab_results",storage_bucket:report.storage_bucket,storage_path:report.storage_path,original_filename:report.title||"MRO-Report.pdf",mime_type:report.mime_type||"application/pdf",file_size:report.file_size,customer_user_id:recipient.id,created_by:user.id,metadata:{origin:"lab_result_delivery",lab_delivery_request_id:id,testing_case_id:request.testing_case_id,source_document_id:report.id}}).select("id").single();
+   if(doc.error)throw doc.error;
+   const created=await db.from("testing_document_deliveries").insert({source_type:"private_document",source_id:doc.data.id,recipient_user_id:recipient.id,recipient_name:request.recipient_name||null,recipient_email:request.recipient_email,portal_status:"sent",portal_sent_at:new Date().toISOString(),delivered_by:user.id,metadata:{lab_delivery_request_id:id,testing_case_id:request.testing_case_id,lab_customer_user_id:request.customer_user_id,authorization_review:request.staff_notes}}).select("id").single();
+   if(created.error){await db.from("testing_private_documents").delete().eq("id",doc.data.id);throw created.error}
+   const updated=await db.from("lab_portal_result_deliveries").update({status:"delivered",staff_user_id:user.id,completed_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq("id",id).eq("status","approved").select("id,status").maybeSingle();
+   if(updated.error||!updated.data){
+    await db.from("testing_document_deliveries").delete().eq("id",created.data.id);
+    await db.from("testing_private_documents").delete().eq("id",doc.data.id);
+    throw updated.error||Error("This delivery changed before completion");
+   }
+   let notified=false;
+   const key=Deno.env.get("RESEND_API_KEY")||"",from=Deno.env.get("SCREENINGS4U_FROM_EMAIL")||"";
+   if(key&&from){
+    const html='<div style="font:15px Arial,sans-serif;max-width:600px;margin:auto;padding:24px;color:#01122F"><h2>Secure testing document available</h2><p>A released testing document has been shared with your authorized customer portal account.</p><p>For your privacy, the report is not attached to this email. Sign in to your customer portal to view your secure documents.</p><a href="https://customers.screenings4u.com/" style="display:inline-block;background:#01122F;color:#fff;padding:13px 18px;text-decoration:none;border-radius:8px;font-weight:bold">Open secure customer portal</a></div>';
+    try{
+      const response=await fetch("https://api.resend.com/emails",{method:"POST",headers:{"Authorization":"Bearer "+key,"Content-Type":"application/json"},body:JSON.stringify({from,to:[request.recipient_email],subject:"Secure testing document available in your portal",html})});
+      if(response.ok){notified=true;await db.from("testing_document_deliveries").update({email_status:"sent",email_sent_at:new Date().toISOString()}).eq("id",created.data.id)}else console.warn("Recipient notification failed",response.status);
+    }catch(e){console.warn("Recipient notification unavailable",e)}
+   }
+   return send({ok:true,delivery_status:"delivered",recipient_portal_notified:notified});
+  }
   if(action==="review"){
    const id=String(body.id||""),decision=String(body.decision||""),notes=String(body.staff_notes||"").trim().slice(0,1500);
    if(!uid(id)||!["approved","declined"].includes(decision))return send({error:"Invalid decision"},400);
