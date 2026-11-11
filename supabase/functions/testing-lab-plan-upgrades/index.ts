@@ -21,11 +21,14 @@ Deno.serve(async req=>{
   const data=await req.json().catch(()=>({}));
   const action=String(data.action||"list");
   if(action==="list"){
-   const q=await db.from("lab_portal_upgrade_requests").select("id,user_id,current_plan_sku,target_plan_sku,status,created_at,updated_at,order_id").order("created_at",{ascending:false}).limit(200);
-   if(q.error)throw q.error;
-   const users=[...new Set((q.data||[]).map(x=>x.user_id))],names=new Map();
+   const [q,subs]=await Promise.all([
+    db.from("lab_portal_upgrade_requests").select("id,user_id,current_plan_sku,target_plan_sku,status,created_at,updated_at,order_id").order("created_at",{ascending:false}).limit(200),
+    db.from("lab_consortium_subscriptions").select("user_id,status,stripe_subscription_id,last_invoice_paid_at,current_period_end,cancel_at_period_end,created_at").order("created_at",{ascending:false}).limit(200)
+   ]);
+   if(q.error||subs.error)throw q.error||subs.error;
+   const users=[...new Set([...(q.data||[]).map(x=>x.user_id),...(subs.data||[]).map(x=>x.user_id)])],names=new Map();
    await Promise.all(users.map(async id=>{const a=await db.auth.admin.getUserById(id);if(!a.error)names.set(id,a.data.user?.email||"");}));
-   return out({requests:(q.data||[]).map(x=>({...x,customer_email:names.get(x.user_id)||null}))});
+   return out({requests:(q.data||[]).map(x=>({...x,customer_email:names.get(x.user_id)||null})),consortium_subscriptions:(subs.data||[]).map(x=>({...x,customer_email:names.get(x.user_id)||null}))});
   }
   return out({error:"Unsupported action"},400);
  }catch(e){console.error("testing-lab-plan-upgrades",e);return out({error:"Unable to access upgrade requests"},500)}
