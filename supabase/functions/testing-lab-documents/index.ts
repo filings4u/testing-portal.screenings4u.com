@@ -26,10 +26,10 @@ Deno.serve(async(req)=>{
   let q=db.from("lab_customer_published_documents").select("id,customer_user_id,title,description,category,original_filename,file_size,is_published,created_at").is("archived_at",null).order("created_at",{ascending:false}).limit(250);
   if(customer){
     if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer))return out({error:"Invalid customer email"},400);
-    const account=await db.from("testing_customer_portal_access").select("user_id").ilike("email",customer).maybeSingle();
+    const account=await db.from("user_profiles").select("id").ilike("email",customer).maybeSingle();
     if(account.error)throw account.error;
     if(!account.data)return out({documents:[],can_edit:canEdit});
-    q=q.eq("customer_user_id",account.data.user_id);
+    q=q.eq("customer_user_id",account.data.id);
   }
   const records=await q;if(records.error)throw records.error;
   const ids=[...new Set((records.data||[]).map(x=>x.customer_user_id))],emails=new Map<string,string>();
@@ -40,11 +40,13 @@ Deno.serve(async(req)=>{
  if(action==="publish"){
   const email=String(body.customer_email||"").trim().toLowerCase();
   if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>254)return out({error:"Valid existing customer email required"},400);
-  const owner=await db.auth.admin.listUsers({page:1,perPage:1000});
-  if(owner.error)throw owner.error;
-  const candidates=(owner.data.users||[]).filter(x=>String(x.email||"").toLowerCase()===email);
-  if(candidates.length!==1)return out({error:"Customer account not found or ambiguous"},404);
-  const customer=candidates[0];
+  const matched=await db.from("user_profiles").select("id,email").ilike("email",email).limit(2);
+  if(matched.error)throw matched.error;
+  if(matched.data?.length!==1)return out({error:"Customer account not found or ambiguous"},404);
+  const customerResult=await db.auth.admin.getUserById(matched.data[0].id);
+  if(customerResult.error||!customerResult.data.user)return out({error:"Verified customer not found"},404);
+  const customer=customerResult.data.user;
+  if(String(customer.email||"").trim().toLowerCase()!==email)return out({error:"Customer email verification mismatch"},403);
   if(!customer.email_confirmed_at)return out({error:"Customer must verify email before documents are shared"},403);
   const entitlement=await db.from("testing_customer_portal_access").select("status").eq("user_id",customer.id).maybeSingle();
   if(entitlement.error)throw entitlement.error;
