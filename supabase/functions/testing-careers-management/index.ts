@@ -63,6 +63,7 @@ Deno.serve(async req=>{
    const resume=decodeResume(body.resume_base64,body.resume_file_name);
    if("error" in resume)return reply({error:resume.error},400,origin);
    const {data:job,error:jobError}=await db.from("testing_career_jobs").select("id,title,slug").eq("id",clean(x.job_id,45)).eq("status","published").maybeSingle();
+   if(job?.slug==="mobile-collector")return reply({error:"Independent contractors must join through the Collector Network page."},400,origin);
    if(jobError)throw jobError;
    if(!job)return reply({error:"This position is not accepting applications."},400,origin);
    const details=x.application_details&&typeof x.application_details==="object"&&!Array.isArray(x.application_details)?x.application_details:{};
@@ -183,7 +184,7 @@ Deno.serve(async req=>{
     .eq("job_id",job.id).eq("recipient_email",recipient).eq("status","sent").order("created_at",{ascending:false}).limit(1);
    if(lastError)throw lastError;
    if(last?.length&&Date.now()-new Date(last[0].created_at).getTime()<5*60*1000)return reply({error:"An invitation to this applicant for this job was already sent within the last five minutes."},409,origin);
-   const applicationUrl="https://screenings4u.com/career-application.html?job="+encodeURIComponent(job.slug);
+   const applicationUrl=job.slug==="mobile-collector"?"https://screenings4u.com/join-our-collector-network.html":"https://screenings4u.com/career-application.html?job="+encodeURIComponent(job.slug);
    const {data:log,error:logError}=await db.from("testing_career_invitations").insert({
     job_id:job.id,recipient_email:recipient,recipient_name:recipientName||null,sent_by:uid,status:"pending",application_url:applicationUrl
    }).select("id").single();
