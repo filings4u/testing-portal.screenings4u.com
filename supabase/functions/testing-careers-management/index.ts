@@ -76,7 +76,9 @@ Deno.serve(async req=>{
    }
    const person=escapeHtml(first),jobName=escapeHtml(job.title);
    const applicantHtml=emailShell("Application received",`<p style="font-size:16px;line-height:1.7">Hello ${person},</p><p style="font-size:16px;line-height:1.7">Thank you for applying for the <strong>${jobName}</strong> position with screenings4u.</p><p style="font-size:16px;line-height:1.7">We received your employment application and résumé. Our hiring team will review your information and contact you if we would like to discuss next steps.</p><p style="font-size:14px;color:#536c86">Submitting an application does not guarantee an interview or employment offer.</p><p style="margin-top:28px">Sincerely,<br><strong>screenings4u Hiring Team</strong></p>`);
-   const adminEmail=clean(Deno.env.get("SCREENINGS4U_CAREERS_ADMIN_EMAIL")||Deno.env.get("SCREENINGS4U_ADMIN_EMAIL"),255);
+   const settings=await db.from("testing_management_settings").select("value").eq("key","careers_notification_email").maybeSingle();
+   const configured=typeof settings.data?.value==="string"?settings.data.value:"";
+   const adminEmail=clean(configured||Deno.env.get("SCREENINGS4U_CAREERS_ADMIN_EMAIL")||Deno.env.get("SCREENINGS4U_ADMIN_EMAIL"),255);
    const applicantUrl="https://testing-portal.screenings4u.com/career-applicant.html?id="+encodeURIComponent(candidateId);
    const adminHtml=emailShell("New career application",`<p style="font-size:16px;line-height:1.7">A candidate has submitted an application through screenings4u.com.</p><table role="presentation" style="width:100%;border-collapse:collapse;font-size:15px"><tr><td style="padding:12px;border-bottom:1px solid #e3eaf1">Candidate</td><td style="padding:12px;border-bottom:1px solid #e3eaf1"><strong>${escapeHtml(first+" "+last)}</strong></td></tr><tr><td style="padding:12px;border-bottom:1px solid #e3eaf1">Position</td><td style="padding:12px;border-bottom:1px solid #e3eaf1">${jobName}</td></tr><tr><td style="padding:12px;border-bottom:1px solid #e3eaf1">Résumé</td><td style="padding:12px;border-bottom:1px solid #e3eaf1">Attached securely in the staff portal</td></tr></table><p style="margin-top:25px"><a href="${applicantUrl}" style="display:inline-block;background:#ed6b2b;color:white;padding:14px 22px;border-radius:8px;text-decoration:none;font-weight:bold">Review application securely</a></p><p style="font-size:13px;color:#59708a">Staff sign-in is required to access candidate details and the résumé. Do not forward this message.</p>`);
    const [applicantEmail,adminEmailStatus]=await Promise.all([
@@ -104,6 +106,19 @@ Deno.serve(async req=>{
    const signed=await db.storage.from(RESUME_BUCKET).createSignedUrl(app.resume_storage_path,90,{download:app.resume_file_name||"resume"});
    if(signed.error)throw signed.error;
    return reply({url:signed.data.signedUrl,expires_in:90},200,origin);
+  }
+  if(action==="get_careers_settings"){
+   const {data,error}=await db.from("testing_management_settings").select("value").eq("key","careers_notification_email").maybeSingle();
+   if(error)throw error;
+   return reply({notification_email:typeof data?.value==="string"?data.value:"",has_environment_fallback:!!(Deno.env.get("SCREENINGS4U_CAREERS_ADMIN_EMAIL")||Deno.env.get("SCREENINGS4U_ADMIN_EMAIL"))},200,origin);
+  }
+  if(action==="save_careers_settings"){
+   const email=clean(body.notification_email,255);
+   if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return reply({error:"Enter a valid notification email address."},400,origin);
+   if(!email)return reply({error:"Enter a recipient for new career applications."},400,origin);
+   const {error}=await db.from("testing_management_settings").upsert({key:"careers_notification_email",value:email,updated_by:uid,updated_at:new Date().toISOString()},{onConflict:"key"});
+   if(error)throw error;
+   return reply({ok:true,notification_email:email},200,origin);
   }
   if(action==="list_jobs"){
    const {data,error}=await db.from("testing_career_jobs").select("*").order("display_order");if(error)throw error;return reply({jobs:data},200,origin);
