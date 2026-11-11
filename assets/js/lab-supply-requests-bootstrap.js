@@ -1,0 +1,1 @@
+(async()=>{'use strict';try{const state=await TestingAuth.requireAuth();if(!state)return;TestingShell.render(state);TestingSecurity.init();await TestingSupplyRequests.init()}catch(e){console.error('[Workforce supplies]',e);const mount=document.getElementById('tmPage');if(mount)mount.textContent='Unable to load supply requests: '+String(e?.message||e)}})();
