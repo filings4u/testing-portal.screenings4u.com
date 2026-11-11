@@ -190,17 +190,18 @@ Deno.serve(async req=>{
    }).select("id").single();
    if(logError)throw logError;
    const salutation=recipientName?"Hello "+escapeHtml(recipientName)+",":"Hello,";
+   const contractor=job.slug==="mobile-collector";
    const bodyHtml=`<p style="font-size:16px;line-height:1.7">${salutation}</p>
-<p style="font-size:16px;line-height:1.7">You are invited to apply for the <strong>${escapeHtml(job.title)}</strong> position with screenings4u.</p>
-<p style="font-size:15px;line-height:1.7">Review the position details and complete the secure employment application using the link below. You can upload your résumé and any requested supporting documents through the application.</p>
+<p style="font-size:16px;line-height:1.7">You are invited to ${contractor?"join our independent Collector Network as a":"apply for the"} <strong>${escapeHtml(job.title)}</strong> ${contractor?"independent contractor":"position"} with screenings4u.</p>
+<p style="font-size:15px;line-height:1.7">${contractor?"Review the network requirements and complete the independent contractor onboarding form using the link below.":"Review the position details and complete the secure employment application using the link below. You can upload your résumé and any requested supporting documents through the application."}</p>
 <table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin:22px 0;border-collapse:collapse">
 <tr><td style="padding:10px 0;border-bottom:1px solid #e3eaf1;color:#637791">Position</td><td style="padding:10px 0;border-bottom:1px solid #e3eaf1;text-align:right;color:#193454;font-weight:bold">${escapeHtml(job.title)}</td></tr>
 <tr><td style="padding:10px 0;border-bottom:1px solid #e3eaf1;color:#637791">Location</td><td style="padding:10px 0;border-bottom:1px solid #e3eaf1;text-align:right;color:#193454">${escapeHtml(job.location)}</td></tr>
 <tr><td style="padding:10px 0;border-bottom:1px solid #e3eaf1;color:#637791">Employment</td><td style="padding:10px 0;border-bottom:1px solid #e3eaf1;text-align:right;color:#193454">${escapeHtml(job.employment_type)}</td></tr>
 </table>
-<p style="text-align:center;margin:30px 0"><a href="${applicationUrl}" style="background:#ed6b2b;border-radius:9px;padding:15px 32px;display:inline-block;color:#fff;font-size:16px;font-weight:bold;text-decoration:none">Apply Now</a></p>
+<p style="text-align:center;margin:30px 0"><a href="${applicationUrl}" style="background:#ed6b2b;border-radius:9px;padding:15px 32px;display:inline-block;color:#fff;font-size:16px;font-weight:bold;text-decoration:none">${contractor?"Join Collector Network":"Apply Now"}</a></p>
 <p style="font-size:13px;line-height:1.65;color:#536c86">If the button does not work, open this link:<br><a href="${applicationUrl}" style="color:#24467f;word-break:break-all">${applicationUrl}</a></p>
-<p style="font-size:14px;line-height:1.65;color:#536c86">If you did not expect this invitation, you may disregard it. This invitation does not guarantee employment or an interview.</p>
+<p style="font-size:14px;line-height:1.65;color:#536c86">If you did not expect this invitation, you may disregard it. ${contractor?"Submitting your information does not guarantee assignments or a contractor agreement.":"This invitation does not guarantee employment or an interview."}</p>
 <p style="font-size:15px;line-height:1.6">Sincerely,<br><strong>screenings4u Hiring Team</strong></p>`;
    let status="failed",messageId:null|string=null,providerError="";
    try{
@@ -208,7 +209,7 @@ Deno.serve(async req=>{
        method:"POST",headers:{"authorization":"Bearer "+apiKey,"content-type":"application/json"},
        body:JSON.stringify({
         from:Deno.env.get("SCREENINGS4U_FROM_EMAIL")||"screenings4u <notifications@screenings4u.com>",
-        to:[recipient],subject:"Invitation to apply: "+job.title+" | screenings4u",
+        to:[recipient],subject:(contractor?"Invitation to join Collector Network: ":"Invitation to apply: ")+job.title+" | screenings4u",
         html:emailShell("You're invited to apply",bodyHtml)
        }),signal:AbortSignal.timeout(12000)
      });
