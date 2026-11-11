@@ -34,11 +34,12 @@ Deno.serve(async(req)=>{
  }
  if(!["admin","manager","editor"].includes(String(grant.data.access_level||"").toLowerCase()))return out({error:"Testing write access required"},403);
  const id=String(b.id||"");if(!uuid(id))return out({error:"Valid request ID required"},400);
- const record=await db.from("lab_plan_service_requests").select("id,customer_user_id,status,document_path").eq("id",id).maybeSingle();
+ const record=await db.from("lab_plan_service_requests").select("id,customer_user_id,feature_code,status,document_path").eq("id",id).maybeSingle();
  if(record.error)throw record.error;if(!record.data)return out({error:"Request not found"},404);
  if(action==="update"){
   const next=String(b.status||""),notes=String(b.staff_notes||"").trim().slice(0,1500);
   if(!states.includes(next)||!(permitted[record.data.status]||[]).includes(next))return out({error:"Invalid status transition"},409);
+  if(next==="completed"&&["consortium_certificates","compliance_documents","client_document_templates","audit_readiness_export"].includes(record.data.feature_code)&&!record.data.document_path)return out({error:"Upload the completed customer document before marking this request complete."},409);
   const patch:any={status:next,staff_notes:notes,assigned_staff_user_id:user.id,updated_at:new Date().toISOString()};
   if(next==="completed")patch.fulfilled_at=new Date().toISOString();
   const result=await db.from("lab_plan_service_requests").update(patch).eq("id",id).eq("status",record.data.status).select("id,status").maybeSingle();
