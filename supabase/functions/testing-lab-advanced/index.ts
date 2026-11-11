@@ -34,6 +34,7 @@ Deno.serve(async req=>{
   if(action==="review"){
    const id=String(body.id||""),decision=String(body.decision||""),notes=String(body.staff_notes||"").trim().slice(0,1500);
    if(!uid(id)||!["approved","declined"].includes(decision))return send({error:"Invalid decision"},400);
+   if(decision==="approved"&&notes.length<10)return send({error:"Document the recipient authorization verification before approving result delivery"},400);
    const row=await db.from("lab_portal_result_deliveries").select("id,customer_user_id,testing_case_id,recipient_email,status").eq("id",id).maybeSingle();
    if(row.error)throw row.error;if(!row.data||row.data.status!=="pending_review")return send({error:"Request no longer pending"},409);
    const testing=await db.from("testing_cases").select("id,customer_user_id,released_at").eq("id",row.data.testing_case_id).eq("customer_user_id",row.data.customer_user_id).maybeSingle();
