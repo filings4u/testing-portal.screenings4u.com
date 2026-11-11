@@ -67,10 +67,12 @@ Deno.serve(async req=>{
    if(!job)return reply({error:"This position is not accepting applications."},400,origin);
    const details=x.application_details&&typeof x.application_details==="object"&&!Array.isArray(x.application_details)?x.application_details:{};
    if(JSON.stringify(details).length>35000)return reply({error:"Application information exceeds the permitted length."},400,origin);
-   if(job.slug==="specimen-collector"||job.slug==="janitorial-associate"){
+   if(["specimen-collector","janitorial-associate","receptionist"].includes(job.slug)){
      const collector=job.slug==="specimen-collector";
      const required=collector?
        ["zip_code","preferred_employment_type","earliest_start_date","days_available","hours_available","sponsorship_required","prior_collection_experience","willing_training","electronic_signature","signature_date"]:
+       job.slug==="receptionist"?
+       ["zip_code","preferred_employment_type","earliest_start_date","days_available","hours_available","sponsorship_required","prior_reception_experience","willing_training","schedule_compatibility","onsite_attendance","essential_duties","electronic_signature","signature_date"]:
        ["earliest_start_date","days_available","hours_available","sponsorship_required","prior_cleaning_experience","willing_training","schedule_compatibility","essential_duties","electronic_signature","signature_date"];
      const missing=required.filter(k=>!clean(details[k],300));
      if(typeof x.work_authorized!=="boolean")missing.push("work_authorized");
@@ -87,7 +89,7 @@ Deno.serve(async req=>{
    const storagePath=candidateId+"/resume."+resume.ext;
    const uploaded=await db.storage.from(RESUME_BUCKET).upload(storagePath,resume.bytes,{contentType:resume.mime,upsert:false,cacheControl:"0"});
    if(uploaded.error){console.error("Career resume upload error",uploaded.error);return reply({error:"Could not securely save résumé. Please retry."},500,origin)}
-   const inserted=await db.from("testing_career_applications").insert({id:candidateId,job_id:job.id,first_name:first,last_name:last,email,phone,city:clean(x.city,100),state:clean(x.state,100),experience:clean(x.experience,100),availability:clean(x.availability,200),work_authorized:typeof x.work_authorized==="boolean"?x.work_authorized:null,qualifications:clean(x.qualifications,3500),comments:clean(x.comments,2000),consent:true,resume_storage_path:storagePath,resume_file_name:resume.fileName,resume_mime_type:resume.mime,resume_size_bytes:resume.bytes.length,application_details:details,electronic_signature:clean(details.electronic_signature,150)||null,signed_at:details.signature_date?new Date().toISOString():null,acknowledgments:details.acknowledgments||{},applicant_privacy_notice_version:["specimen-collector","janitorial-associate"].includes(job.slug)?"2024-01-01":null,attachment_upload_token_hash:uploadTokenHash,attachment_upload_expires_at:new Date(Date.now()+30*60*1000).toISOString()});
+   const inserted=await db.from("testing_career_applications").insert({id:candidateId,job_id:job.id,first_name:first,last_name:last,email,phone,city:clean(x.city,100),state:clean(x.state,100),experience:clean(x.experience,100),availability:clean(x.availability,200),work_authorized:typeof x.work_authorized==="boolean"?x.work_authorized:null,qualifications:clean(x.qualifications,3500),comments:clean(x.comments,2000),consent:true,resume_storage_path:storagePath,resume_file_name:resume.fileName,resume_mime_type:resume.mime,resume_size_bytes:resume.bytes.length,application_details:details,electronic_signature:clean(details.electronic_signature,150)||null,signed_at:details.signature_date?new Date().toISOString():null,acknowledgments:details.acknowledgments||{},applicant_privacy_notice_version:["specimen-collector","janitorial-associate","receptionist"].includes(job.slug)?"2024-01-01":null,attachment_upload_token_hash:uploadTokenHash,attachment_upload_expires_at:new Date(Date.now()+30*60*1000).toISOString()});
    if(inserted.error){
     await db.storage.from(RESUME_BUCKET).remove([storagePath]);
     throw inserted.error;
