@@ -161,6 +161,65 @@ Deno.serve(async req=>{
    if(error)throw error;
    return reply({ok:true,notification_email:email},200,origin);
   }
+  if(action==="list_invitations"){
+   const {data,error}=await db.from("testing_career_invitations")
+    .select("id,job_id,recipient_email,recipient_name,status,provider_error,created_at,sent_at,testing_career_jobs(title,slug)")
+    .order("created_at",{ascending:false}).limit(100);
+   if(error)throw error;
+   return reply({invitations:data||[]},200,origin);
+  }
+  if(action==="send_invitation"){
+   const jobId=clean(body.job_id,45),recipient=clean(body.email,255).toLowerCase(),recipientName=clean(body.name,120);
+   if(!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(recipient))return reply({error:"Enter a valid applicant email address."},400,origin);
+   if(!/^[0-9a-fA-F-]{36}$/.test(jobId))return reply({error:"Choose a job posting."},400,origin);
+   const {data:job,error:jobError}=await db.from("testing_career_jobs").select("id,title,slug,status,location,employment_type").eq("id",jobId).maybeSingle();
+   if(jobError)throw jobError;
+   if(!job||job.status!=="published")return reply({error:"Only published positions can be sent to applicants."},400,origin);
+   const apiKey=Deno.env.get("RESEND_API_KEY")||"";
+   if(!apiKey)return reply({error:"Email service is not configured. Please contact the administrator."},503,origin);
+   const {data:last,error:lastError}=await db.from("testing_career_invitations").select("id,status,created_at")
+    .eq("job_id",job.id).eq("recipient_email",recipient).eq("status","sent").order("created_at",{ascending:false}).limit(1);
+   if(lastError)throw lastError;
+   if(last?.length&&Date.now()-new Date(last[0].created_at).getTime()<5*60*1000)return reply({error:"An invitation to this applicant for this job was already sent within the last five minutes."},409,origin);
+   const applicationUrl="https://screenings4u.com/career-application.html?job="+encodeURIComponent(job.slug);
+   const {data:log,error:logError}=await db.from("testing_career_invitations").insert({
+    job_id:job.id,recipient_email:recipient,recipient_name:recipientName||null,sent_by:uid,status:"pending",application_url:applicationUrl
+   }).select("id").single();
+   if(logError)throw logError;
+   const salutation=recipientName?"Hello "+escapeHtml(recipientName)+",":"Hello,";
+   const bodyHtml=`<p style="font-size:16px;line-height:1.7">${salutation}</p>
+<p style="font-size:16px;line-height:1.7">You are invited to apply for the <strong>${escapeHtml(job.title)}</strong> position with screenings4u.</p>
+<p style="font-size:15px;line-height:1.7">Review the position details and complete the secure employment application using the link below. You can upload your résumé and any requested supporting documents through the application.</p>
+<table role="presentation" cellpadding="0" cellspacing="0" style="width:100%;margin:22px 0;border-collapse:collapse">
+<tr><td style="padding:10px 0;border-bottom:1px solid #e3eaf1;color:#637791">Position</td><td style="padding:10px 0;border-bottom:1px solid #e3eaf1;text-align:right;color:#193454;font-weight:bold">${escapeHtml(job.title)}</td></tr>
+<tr><td style="padding:10px 0;border-bottom:1px solid #e3eaf1;color:#637791">Location</td><td style="padding:10px 0;border-bottom:1px solid #e3eaf1;text-align:right;color:#193454">${escapeHtml(job.location)}</td></tr>
+<tr><td style="padding:10px 0;border-bottom:1px solid #e3eaf1;color:#637791">Employment</td><td style="padding:10px 0;border-bottom:1px solid #e3eaf1;text-align:right;color:#193454">${escapeHtml(job.employment_type)}</td></tr>
+</table>
+<p style="text-align:center;margin:30px 0"><a href="${applicationUrl}" style="background:#ed6b2b;border-radius:9px;padding:15px 32px;display:inline-block;color:#fff;font-size:16px;font-weight:bold;text-decoration:none">Apply Now</a></p>
+<p style="font-size:13px;line-height:1.65;color:#536c86">If the button does not work, open this link:<br><a href="${applicationUrl}" style="color:#24467f;word-break:break-all">${applicationUrl}</a></p>
+<p style="font-size:14px;line-height:1.65;color:#536c86">If you did not expect this invitation, you may disregard it. This invitation does not guarantee employment or an interview.</p>
+<p style="font-size:15px;line-height:1.6">Sincerely,<br><strong>screenings4u Hiring Team</strong></p>`;
+   let status="failed",messageId:null|string=null,providerError="";
+   try{
+     const response=await fetch("https://api.resend.com/emails",{
+       method:"POST",headers:{"authorization":"Bearer "+apiKey,"content-type":"application/json"},
+       body:JSON.stringify({
+        from:Deno.env.get("SCREENINGS4U_FROM_EMAIL")||"screenings4u <notifications@screenings4u.com>",
+        to:[recipient],subject:"Invitation to apply: "+job.title+" | screenings4u",
+        html:emailShell("You're invited to apply",bodyHtml)
+       }),signal:AbortSignal.timeout(12000)
+     });
+     const result=await response.json().catch(()=>({}));
+     if(response.ok&&result.id){status="sent";messageId=result.id}
+     else {providerError=clean(result.message||"Email provider rejected this request.",500);console.error("Career invitation rejected",response.status,providerError)}
+   }catch(e){providerError="Unable to connect to email provider.";console.error("Career invitation send failed",e)}
+   const {error:updatedError}=await db.from("testing_career_invitations")
+     .update({status,provider_message_id:messageId,provider_error:status==="sent"?null:providerError,sent_at:status==="sent"?new Date().toISOString():null})
+     .eq("id",log.id);
+   if(updatedError)console.error("Career invitation delivery log update failed",updatedError);
+   if(status!=="sent")return reply({error:"The email was not accepted by the provider. "+providerError},502,origin);
+   return reply({ok:true,invitation_id:log.id,status:"sent",recipient_email:recipient,job_title:job.title,application_url:applicationUrl},200,origin);
+  }
   if(action==="list_jobs"){
    const {data,error}=await db.from("testing_career_jobs").select("*").order("display_order");if(error)throw error;return reply({jobs:data},200,origin);
   }
