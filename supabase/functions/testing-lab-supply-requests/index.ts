@@ -28,26 +28,47 @@ Deno.serve(async(req:Request)=>{
   if(memberships.error)throw memberships.error;
   const allowedIds=[...new Set((memberships.data||[]).map((x:any)=>x.customer_user_id).filter(Boolean))];
   if(!allowedIds.length)return reply({orders:[],total:0});
+  // Only Lab Account supply orders: new orders carry source_portal,
+  // while earlier orders carry an audited Lab Account customer notification.
+  const labIds=async(rows:any[])=>{
+   const ids=rows.map(x=>x.id);
+   if(!ids.length)return new Set<string>();
+   const events=await db.from("testing_email_events").select("related_entity_id").eq("event_type","lab_account_supply_customer").eq("related_entity_type","supply_order").in("related_entity_id",ids).limit(500);
+   if(events.error)throw events.error;
+   return new Set<string>((events.data||[]).map((x:any)=>String(x.related_entity_id)));
+  };
   if(action==="list"){
    const orders=await db.from("ic_portal_supply_orders").select("id,contractor_user_id,shipping_address,status,carrier,tracking_number,notes,created_at,updated_at,ic_portal_supply_order_lines(quantity,item_id,ic_portal_supply_items(name,sku,unit))").in("contractor_user_id",allowedIds).order("created_at",{ascending:false}).limit(250);
    if(orders.error)throw orders.error;
    const emails=new Map((memberships.data||[]).map((x:any)=>[x.customer_user_id,x.customer_email]));
-   return reply({orders:(orders.data||[]).map((x:any)=>({...x,customer_email:emails.get(x.contractor_user_id)||null})),total:(orders.data||[]).length});
+   const audited=await labIds(orders.data||[]);
+   const labOrders=(orders.data||[]).filter((x:any)=>x.shipping_address?.source_portal==="lab_account"||audited.has(String(x.id)));
+   return reply({orders:labOrders.map((x:any)=>({...x,customer_email:emails.get(x.contractor_user_id)||null})),total:labOrders.length});
   }
   if(action==="transition"){
    if(!["admin","manager","editor"].includes(String(access.data.access_level||"").toLowerCase()))return reply({error:"Workforce testing edit permission required"},403);
    if(!uuid(body.id))return reply({error:"Invalid request identifier"},400);
    const target=clean(body.status,25),previous=clean(body.previous_status,25);
    if(!previous||!(transitions[previous]||[]).includes(target))return reply({error:"Invalid supply workflow transition"},400);
-   const current=await db.from("ic_portal_supply_orders").select("id,contractor_user_id,status,carrier,tracking_number,notes").eq("id",body.id).maybeSingle();
+   const current=await db.from("ic_portal_supply_orders").select("id,contractor_user_id,shipping_address,status,carrier,tracking_number,notes").eq("id",body.id).maybeSingle();
    if(current.error)throw current.error;
    if(!current.data||!allowedIds.includes(current.data.contractor_user_id))return reply({error:"Supply request not found"},404);
+   const audited=await labIds([current.data]);
+   if(current.data.shipping_address?.source_portal!=="lab_account"&&!audited.has(String(current.data.id)))return reply({error:"Lab Account supply request not found"},404);
    if(current.data.status!==previous)return reply({error:"Request changed; reload before updating"},409);
    const carrier=clean(body.carrier,100),tracking=clean(body.tracking_number,160),notes=clean(body.notes,1000);
-   if(target==="shipped"&&(!(carrier||current.data.carrier)||!(tracking||current.data.tracking_number)))return reply({error:"Carrier and tracking number required"},400);
+   if(target==="shipped"){
+    const c=(carrier||clean(current.data.carrier,100)).toLowerCase().replace(/[\s.-]/g,"");
+    if(!["ups","fedex","usps"].includes(c))return reply({error:"Select UPS, FedEx, or USPS as the carrier"},400);
+    if(!/^[A-Za-z0-9]{6,80}$/.test(tracking||clean(current.data.tracking_number,160)))return reply({error:"Enter a valid UPS, FedEx, or USPS tracking number"},400);
+   }
    const patch:any={status:target,updated_at:new Date().toISOString()};
    if(notes)patch.notes=(clean(current.data.notes,3000)+(current.data.notes?"\n":"")+new Date().toISOString()+" Workforce: "+notes).slice(0,5000);
-   if(target==="shipped"){patch.carrier=carrier||current.data.carrier;patch.tracking_number=tracking||current.data.tracking_number;}
+   if(target==="shipped"){
+    const c=(carrier||clean(current.data.carrier,100)).toLowerCase().replace(/[\s.-]/g,"");
+    patch.carrier=c==="ups"?"UPS":c==="fedex"?"FedEx":"USPS";
+    patch.tracking_number=tracking||current.data.tracking_number;
+   }
    const updated=await db.from("ic_portal_supply_orders").update(patch).eq("id",body.id).eq("status",previous).select("id,status,carrier,tracking_number").maybeSingle();
    if(updated.error)throw updated.error;
    if(!updated.data)return reply({error:"Request changed; reload before updating"},409);
