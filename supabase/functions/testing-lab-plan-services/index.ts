@@ -28,9 +28,16 @@ Deno.serve(async(req)=>{
   const q=await db.from("lab_plan_service_requests").select("id,customer_user_id,feature_code,request_type,title,details,status,staff_notes,document_name,created_at,updated_at,fulfilled_at").order("created_at",{ascending:false}).limit(250);
   if(q.error)throw q.error;
   const rows=q.data||[];
-  const ids=[...new Set(rows.map((x:any)=>x.customer_user_id))],emails=new Map<string,string>();
+  const dates=await db.from("lab_customer_selection_schedules").select("id,customer_user_id,consortium_id,selection_type,scheduled_for,status,created_at").eq("status","scheduled").order("scheduled_for",{ascending:true}).limit(200);
+  if(dates.error)throw dates.error;
+  const poolIds=[...new Set((dates.data||[]).map((x:any)=>x.consortium_id))];
+  const pools=poolIds.length?await db.from("lab_customer_consortiums").select("id,name,owner_user_id").in("id",poolIds):{data:[],error:null};
+  if(pools.error)throw pools.error;
+  const poolNames=new Map((pools.data||[]).map((x:any)=>[x.id,x]));
+  const ids=[...new Set([...rows.map((x:any)=>x.customer_user_id),...(dates.data||[]).map((x:any)=>x.customer_user_id)])],emails=new Map<string,string>();
   await Promise.all(ids.map(async id=>{const x=await db.auth.admin.getUserById(id);if(!x.error&&x.data.user)emails.set(id,String(x.data.user.email||""))}));
-  return out({requests:rows.map((x:any)=>({...x,customer_email:emails.get(x.customer_user_id)||""})),can_edit:["admin","manager","editor"].includes(String(grant.data.access_level||"").toLowerCase())});
+  const validSchedules=(dates.data||[]).filter((x:any)=>poolNames.get(x.consortium_id)?.owner_user_id===x.customer_user_id);
+  return out({requests:rows.map((x:any)=>({...x,customer_email:emails.get(x.customer_user_id)||""})),selection_schedules:validSchedules.map((x:any)=>({id:x.id,customer_email:emails.get(x.customer_user_id)||"",program_name:poolNames.get(x.consortium_id)?.name,selection_type:x.selection_type,scheduled_for:x.scheduled_for,status:x.status})),can_edit:["admin","manager","editor"].includes(String(grant.data.access_level||"").toLowerCase())});
  }
  if(!["admin","manager","editor"].includes(String(grant.data.access_level||"").toLowerCase()))return out({error:"Testing write access required"},403);
  const id=String(b.id||"");if(!uuid(id))return out({error:"Valid request ID required"},400);
