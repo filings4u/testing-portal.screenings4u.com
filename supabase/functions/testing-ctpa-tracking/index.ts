@@ -57,7 +57,8 @@ Deno.serve(async req=>{
   const carrier=safe(body.carrier,10).toUpperCase(),tracking=safe(body.tracking_number,80).replace(/\s/g,""),status=safe(body.shipment_status,32);
   if(!["USPS","UPS","FEDEX"].includes(carrier)||!/^[a-zA-Z0-9]{6,80}$/.test(tracking))return reply({error:"Valid carrier and tracking number required"},400);
   if(!["preparing","shipped","in_transit","out_for_delivery","delivered","exception"].includes(status))return reply({error:"Invalid shipment status"},400);
-  const values={tenant_id:tenant,operating_context:context,employer_record_id:employerId,employer_name:name,employer_email:recipient,carrier,tracking_number:tracking,shipment_status:status,order_reference:safe(body.order_reference,120),contents:safe(body.contents,500),updated_at:new Date().toISOString(),updated_by:user.id};
+  for(const value of [body.shipped_at,body.expected_delivery_at])if(value&&!Number.isFinite(Date.parse(value)))return reply({error:"Invalid shipment date"},400);
+  const values={tenant_id:tenant,operating_context:context,employer_record_id:employerId,employer_name:name,employer_email:recipient,carrier,tracking_number:tracking,shipment_status:status,order_reference:safe(body.order_reference,120),contents:safe(body.contents,500),shipped_at:body.shipped_at?new Date(body.shipped_at).toISOString():null,expected_delivery_at:body.expected_delivery_at?new Date(body.expected_delivery_at).toISOString():null,delivered_at:status==="delivered"?new Date().toISOString():null,updated_at:new Date().toISOString(),updated_by:user.id};
   const existing=await db.from("workforce_ctpa_shipments").select("id").eq("tenant_id",tenant).eq("carrier",carrier).eq("tracking_number",tracking).maybeSingle();
   if(existing.error)throw existing.error;
   let result;
