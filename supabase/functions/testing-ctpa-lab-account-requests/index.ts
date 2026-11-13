@@ -62,6 +62,23 @@ Deno.serve(async request=>{
     .eq("id",sourceId).eq("account_code",accountNumber).eq("status","active").maybeSingle();
    if(original.error)throw original.error;
    if(!original.data)return reply({error:"An active laboratory account with this ID and number must exist in Testing Operations"},409);
+   // Require an independently linked, active C/TPA Lab Account entitlement,
+   // not a staff-entered checkbox or a matching display name.
+   const unifiedEntitlements=await records.select("data")
+    .eq("tenant_id",found.data.tenant_id).eq("kind","lab_accounts")
+    .eq("operating_context","shared").not("data->>_legacy_id","is",null)
+    .is("archived_at",null).limit(30);
+   if(unifiedEntitlements.error)throw unifiedEntitlements.error;
+   const legacyIds=(unifiedEntitlements.data||[]).map((r:any)=>r.data?._legacy_id).filter(uuid);
+   if(!legacyIds.length)return reply({error:"No linked Lab Account entitlement exists for this C/TPA. Complete organization linking and purchasing first."},409);
+   const entitlements=await db.from("workforce_lab_company_entitlements")
+    .select("id,ctpa_id,source_order_id,status").in("id",legacyIds)
+    .eq("status","active");
+   if(entitlements.error)throw entitlements.error;
+   const authorized=(entitlements.data||[]).find((r:any)=>
+     r.ctpa_id===original.data.ctpa_id&&uuid(r.source_order_id)&&
+     String(r.source_order_id)===purchaseReference);
+   if(!authorized)return reply({error:"Account ownership and active paid entitlement could not be verified for this C/TPA. Resolve the purchase or linkage before issuing."},409);
    // Testing staff must explicitly confirm account ownership and the separate paid purchase record.
    if(body.confirm_verified_ownership!==true)return reply({error:"Confirm the lab account belongs to this C/TPA customer before assigning it"},400);
    if(body.confirm_purchase_checked!==true)return reply({error:"Confirm the purchase record has been checked"},400);
