@@ -170,12 +170,63 @@ async function trackingFormPage(){
   catch(error){out.textContent=error.message;busy(btn,false)}
  };
 }
+
+async function ctpaRequestsPanel(){
+ const callRequests=body=>call('testing-ctpa-lab-account-requests',body);
+ try{
+  const data=await callRequests({action:'list'}),requests=data.requests||[];
+  const html=requests.map(r=>{
+   const d=r.data||{},issued=d.status==='issued';
+   return '<article class="lab-panel" style="margin:10px 0;padding:16px;border:1px solid #d6e1eb;border-radius:10px">'+
+    '<h3>'+esc(d.company_name||'C/TPA employer')+' <small>'+esc(r.operating_context==='dot'?'DOT':'NON-DOT')+'</small></h3>'+
+    '<p>Service: '+esc(d.service||'')+' · Request: '+esc(d.order_reference||r.id)+'</p>'+
+    '<p>Requested provider: '+esc(d.provider||'Not specified')+' · Status: '+esc(d.status||'pending')+'</p>'+
+    (issued?'<p><strong>Issued account:</strong> '+esc(d.account_number||'')+'</p>':
+     '<div class="lab-edit-grid" data-ctpa-request="'+esc(r.id)+'">'+
+     '<label>Review notes<input data-ctpa-notes maxlength="1500" placeholder="Internal fulfillment notes"></label>'+
+     '<label>Verified laboratory number<input data-ctpa-number placeholder="Number from active laboratory account"></label>'+
+     '<label>Existing laboratory account record ID<input data-ctpa-source-id placeholder="UUID from account-number record"></label>'+
+     '<label>Verified purchase order ID<input data-ctpa-purchase placeholder="Purchase order UUID"></label>'+
+     '<div class="lab-form-actions"><button type="button" data-ctpa-review="'+esc(r.id)+'">Mark In Review</button>'+
+     '<button type="button" class="lab-primary" data-ctpa-issue="'+esc(r.id)+'"'+(data.can_fulfill?'':' disabled')+'>Verify and Issue</button></div></div>')+
+     '</article>';
+  }).join('');
+  const panel=section('C/TPA Employer Lab Account Requests',
+   '<p class="lab-muted">New C/TPA employer laboratory requests appear here for review. Issuance verifies an active existing laboratory account, linked C/TPA entitlement, and its paid order. These checks cannot be bypassed.</p>'+
+   (html||'<p>No C/TPA account requests awaiting review.</p>'));
+  content.insertAdjacentHTML('beforeend',panel);
+  content.querySelectorAll('[data-ctpa-review],[data-ctpa-issue]').forEach(button=>button.onclick=async()=>{
+   const id=button.dataset.ctpaReview||button.dataset.ctpaIssue;
+   const holder=button.closest('[data-ctpa-request]');
+   if(!holder)return;
+   const value=sel=>holder.querySelector(sel)?.value?.trim()||'';
+   if(button.dataset.ctpaIssue){
+    if(!confirm('Confirm that the laboratory account belongs to the correct C/TPA and the matching purchase has been verified. Account issuance will make this number eligible for C/TPA orders.'))return;
+   }
+   busy(button,true);
+   try{
+    const action=button.dataset.ctpaIssue?'issue':'review';
+    const result=await callRequests({action,id,notes:value('[data-ctpa-notes]'),
+     account_number:value('[data-ctpa-number]'),lab_account_record_id:value('[data-ctpa-source-id]'),
+     purchase_reference:value('[data-ctpa-purchase]'),
+     confirm_verified_ownership:action==='issue',confirm_purchase_checked:action==='issue'});
+    note(action==='issue'?'Account issued and verified.':'Account marked in review.');
+    await numbersPage();
+   }catch(error){note(error.message,true);busy(button,false)}
+  });
+ }catch(e){
+  content.insertAdjacentHTML('beforeend',section('C/TPA Lab Account Requests',
+   '<p class="lab-muted">Request queue unavailable: '+esc(e.message)+'</p>'));
+ }
+}
+
 async function numbersPage(){
  await loadCore({ctpa:true});
  const eligible=purchasedCompanies().map(p=>({...p,ctpa:ctpaFor(p)}));
  note(purchases.length+' purchased company accounts · '+numbers.length+' laboratory account numbers');
  content.innerHTML=stats([['Purchased companies',new Set(purchases.map(p=>norm(p.customer_email))).size],['Linked C/TPAs',new Set(eligible.map(x=>x.ctpa?.id).filter(Boolean)).size],['Assigned lab numbers',numbers.filter(x=>eligible.some(e=>e.ctpa?.id===x.ctpa_id)).length]]);
- const p=purchases.find(x=>x.id===params.get('intake_id'))||purchases.find(x=>ctpaFor(x)?.id===params.get('ctpa_id'))||purchases.find(x=>ctpaFor(x)?.id===numbers.find(a=>a.id===params.get('id'))?.ctpa_id);
+
+ await ctpaRequestsPanel(); const p=purchases.find(x=>x.id===params.get('intake_id'))||purchases.find(x=>ctpaFor(x)?.id===params.get('ctpa_id'))||purchases.find(x=>ctpaFor(x)?.id===numbers.find(a=>a.id===params.get('id'))?.ctpa_id);
  if(!p){filterable(eligible,x=>[nameFor(x),x.customer_email,x.order_number,x.ctpa?.company_code,...numbers.filter(n=>n.ctpa_id===x.ctpa?.id).map(n=>n.account_code)].join(' '),list=>table(['Purchased company','C/TPA','Assigned numbers','Manage'],list.map(x=>'<tr><td><strong>'+esc(nameFor(x))+'</strong><small>'+esc(x.customer_email)+'</small></td><td>'+esc(x.ctpa?.company_code||'Not linked')+'</td><td>'+numbers.filter(n=>n.ctpa_id===x.ctpa?.id).length+'</td><td>'+link(url('numbers',x.id),'Manage lab numbers','lab-primary')+'</td></tr>'),'No purchased accounts.'));return}
  const ctpa=ctpaFor(p),assigned=numbers.filter(n=>n.ctpa_id===ctpa?.id),edit=assigned.find(x=>x.id===(params.get('number_id')||params.get('id')));
  content.innerHTML+=section('Laboratory account numbers',selectCompany(p.id)+'<p class="lab-muted">Unlimited laboratory account numbers may be assigned to each linked C/TPA. Edit the existing row rather than creating duplicate assignments.</p>');wireSelect('numbers');
