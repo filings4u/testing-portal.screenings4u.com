@@ -18,6 +18,31 @@ async function init(){
   }catch(e){message.textContent='Unable to load paid orders: '+String(e?.message||e)}
  }
 
+
+ function showCtpaSupplyOrder(order,allowed){
+  if(!order)return;
+  const area=root.querySelector('#ctpaSupplyDetail');
+  const phase=order.metadata?.shipment_status||'new';
+  const next={new:'packing',packing:'shipped',shipped:'delivered'}[phase];
+  const ship=order.metadata?.shipping||{};
+  area.textContent='Paid order '+order.order_number+' | Ship: '+[ship.name,ship.address_line1,ship.city,ship.state,ship.postal_code].filter(Boolean).join(', ');
+  if(!next||!allowed)return;
+  const form=document.createElement('form');
+  form.innerHTML='<label>Carrier (for shipping)<input name="carrier"></label><label>Tracking number (for shipping)<input name="tracking_number"></label><label>Notes<textarea name="notes"></textarea></label><button type="submit">Mark '+next+'</button>';
+  area.appendChild(form);
+  form.onsubmit=async e=>{
+   e.preventDefault();
+   const b=form.querySelector('button');b.disabled=true;
+   const d=Object.fromEntries(new FormData(form).entries());
+   try{
+    await TestingAuth.invoke('testing-ctpa-supply-orders',{action:'transition',id:order.id,next_status:next,...d});
+    area.textContent='Updated';await loadCtpaSupplyOrders();
+   }catch(err){area.appendChild(document.createTextNode(String(err.message||err)));b.disabled=false}
+  };
+ }
+ root.querySelector('#ctpaSupplyRefresh').onclick=loadCtpaSupplyOrders;
+ void loadCtpaSupplyOrders();
+
  let orders=[];
  const $=s=>root.querySelector(s),status=(s,bad=false)=>{const n=$('#requestNotice');n.textContent=s;n.style.color=bad?'#b42318':'#516882'};
  const labels={requested:'Requested',approved:'Approved',packing:'Packing',shipped:'Shipped',delivered:'Delivered',cancelled:'Cancelled'};
