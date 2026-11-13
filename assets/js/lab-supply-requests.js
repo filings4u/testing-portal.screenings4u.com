@@ -5,6 +5,19 @@ const transitions={requested:['approved','cancelled'],approved:['packing','cance
 async function init(){
  const root=document.getElementById('tmPage');if(!root)return;
  root.innerHTML='<div class="tm-page-head"><div><span class="tm-kicker">SCREENINGS4U / LAB ACCOUNTS</span><h1>Customer Supply Requests</h1><p>Review laboratory supply requests, fulfillment, shipping, and customer updates.</p></div><div class="tm-actions"><a class="tm-btn" href="lab-supplies.html">Lab Supplies</a><button class="tm-btn primary" id="requestRefresh">Refresh</button></div></div><div id="requestNotice" role="status"></div><div class="tm-card"><div class="tm-card-body"><label for="requestSearch">Search customer requests</label><input id="requestSearch" type="search" placeholder="Customer, item, tracking, status" style="width:100%;min-height:42px;padding:9px;margin:8px 0 16px;border:1px solid #ced9e9;border-radius:8px"><div class="tm-table-wrap"><table class="tm-table"><thead><tr><th>Requested</th><th>Customer</th><th>Items</th><th>Status</th><th>Shipping</th><th>Action</th></tr></thead><tbody id="requestRows"><tr><td colspan="6">Loading…</td></tr></tbody></table></div></div></div><section id="requestDetail" class="tm-card" style="margin-top:18px" hidden></section>';
+
+ root.insertAdjacentHTML('beforeend','<section class="tm-card" style="margin-top:18px"><div class="tm-card-head"><h2>C/TPA Supply Orders</h2><button class="tm-btn" id="ctpaSupplyRefresh" type="button">Refresh</button></div><div class="tm-card-body"><p id="ctpaSupplyMessage">Loading paid orders</p><div class="tm-table-wrap"><table class="tm-table"><thead><tr><th>Order</th><th>Recipient</th><th>Supplies</th><th>Status</th><th></th></tr></thead><tbody id="ctpaSupplyRows"></tbody></table></div><div id="ctpaSupplyDetail"></div></div></section>');
+ async function loadCtpaSupplyOrders(){
+  const message=root.querySelector('#ctpaSupplyMessage');
+  try{
+   const result=await TestingAuth.invoke('testing-ctpa-supply-orders',{action:'list'});
+   const orders=result.orders||[];
+   message.textContent=orders.length+' paid C/TPA supply orders';
+   root.querySelector('#ctpaSupplyRows').innerHTML=orders.map(o=>'<tr><td>'+esc(o.order_number)+'</td><td>'+esc(o.company_name)+'</td><td>'+esc((o.order_items||[]).map(x=>x.quantity+' x '+(x.metadata?.name||'Supply')).join(', '))+'</td><td>'+esc(o.metadata?.shipment_status||'new')+'</td><td><button class="tm-btn" data-ctpa-order="'+esc(o.id)+'">Review</button></td></tr>').join('')||'<tr><td colspan="5">No paid C/TPA supply orders.</td></tr>';
+   root.querySelectorAll('[data-ctpa-order]').forEach(b=>b.onclick=()=>showCtpaSupplyOrder(orders.find(o=>o.id===b.dataset.ctpaOrder),result.can_update));
+  }catch(e){message.textContent='Unable to load paid orders: '+String(e?.message||e)}
+ }
+
  let orders=[];
  const $=s=>root.querySelector(s),status=(s,bad=false)=>{const n=$('#requestNotice');n.textContent=s;n.style.color=bad?'#b42318':'#516882'};
  const labels={requested:'Requested',approved:'Approved',packing:'Packing',shipped:'Shipped',delivered:'Delivered',cancelled:'Cancelled'};
